@@ -1,0 +1,37 @@
+/**
+ * 프로젝트 커스텀 색상 변수
+ * CSS 변수로 정의하여 어디서든 사용 가능
+ */
+
+:root {
+  /* 브라운/갈색 계열 */
+  --color-brown: #8C704E;
+  --color-tan: #A9745A;
+  
+  /* 크림/노란색 계열 */
+  --color-cream: #FFF5CC;
+  
+  /* 파란색 계열 */
+  --color-sky: #C9D7F8;
+  
+  /* 회색/네이비 계열 */
+  --color-navy: #61627F;
+  
+  /* 분홍/피치 계열 */
+  --color-pink: #FFEDED;
+  --color-peach: #FFEBEB;
+  
+  /* 빨간색/버건디 계열 */
+  --color-burgundy: #B0003A;
+  
+  /* Tailwind에서 사용할 수 있도록 색상 팔레트 */
+  --color-digilog-brown: #8C704E;
+  --color-digilog-tan: #A9745A;
+  --color-digilog-cream: #FFF5CC;
+  --color-digilog-sky: #C9D7F8;
+  --color-digilog-navy: #61627F;
+  --color-digilog-pink: #FFEDED;
+  --color-digilog-peach: #FFEBEB;
+  --color-digilog-burgundy: #B0003A;
+}
+

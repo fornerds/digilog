@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "figma-design-comparison": {
+      "command": "node",
+      "args": [
+        "./mcp-servers/figma-server.js"
+      ],
+      "env": {
+        "FIGMA_WS_PORT": "3055",
+        "FIGMA_API_KEY": "${FIGMA_API_KEY}"
+      }
+    }
+  }
+}
+
