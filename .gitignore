@@ -25,5 +25,11 @@ logs/
 # Build
 build/
 .gradle/
-
 backend/bin/
+
+# Documentation files (루트 디렉토리의 문서 파일들)
+*.md
+!README.md
+!frontend/**/*.md
+!backend/**/*.md
+!docker/**/*.md
