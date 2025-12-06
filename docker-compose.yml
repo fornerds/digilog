@@ -1,0 +1,75 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ${MYSQL_CONTAINER_NAME:-digilog-mysql}
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - digilog-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ${BACKEND_CONTAINER_NAME:-digilog-backend}
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT}:18080"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DRIVER: com.mysql.cj.jdbc.Driver
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO}
+      JPA_SHOW_SQL: ${JPA_SHOW_SQL}
+      JPA_DIALECT: org.hibernate.dialect.MySQLDialect
+      SERVER_PORT: 18080
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+      JWT_COOKIE_NAME: ${JWT_COOKIE_NAME:-accessToken}
+      JWT_REFRESH_COOKIE_NAME: ${JWT_REFRESH_COOKIE_NAME:-refreshToken}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      CORS_METHODS: ${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
+      CORS_HEADERS: ${CORS_HEADERS:-*}
+      COOKIE_SECURE: ${COOKIE_SECURE}
+      COOKIE_SAME_SITE: ${COOKIE_SAME_SITE:-lax}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_REGION: ${AWS_REGION:-ap-northeast-2}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-}
+      AWS_S3_BASE_URL: ${AWS_S3_BASE_URL:-}
+      NAVER_CLIENT_ID: ${NAVER_CLIENT_ID:-}
+      NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET:-}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - digilog-network
+
+volumes:
+  mysql_data:
+
+networks:
+  digilog-network:
+    driver: bridge
+

@@ -1,0 +1,35 @@
+# Gradle
+.gradle/
+build/
+gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Documentation
+*.md
+!README.md
+
+# Environment files (will be passed via docker-compose)
+.env*
+
+# Git
+.git/
+.gitignore
+
+# Test files
+src/test/
+

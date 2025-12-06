@@ -1,0 +1,113 @@
+spring:
+  application:
+    name: digilog
+  
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:testdb}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+    driver-class-name: ${DB_DRIVER:org.h2.Driver}
+  
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    show-sql: ${JPA_SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: ${JPA_DIALECT:org.hibernate.dialect.H2Dialect}
+  
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 10MB
+
+server:
+  port: ${SERVER_PORT:18080}
+  servlet:
+    context-path: /api
+    session:
+      cookie:
+        http-only: true
+        secure: ${COOKIE_SECURE:false}
+        same-site: ${COOKIE_SAME_SITE:lax}
+      timeout: 30m
+
+logging:
+  level:
+    root: INFO
+    com.example: ${LOG_LEVEL:DEBUG}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    description: Digilog API Server
+    version: 1.0.0-SNAPSHOT
+  java:
+    version: ${java.version}
+  spring:
+    version: ${spring.version}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:your-secret-key-change-this-in-production-minimum-256-bits}
+    expiration: ${JWT_EXPIRATION:86400000} # 24시간 (밀리초)
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7일 (밀리초)
+    cookie-name: ${JWT_COOKIE_NAME:accessToken}
+    refresh-cookie-name: ${JWT_REFRESH_COOKIE_NAME:refreshToken}
+  
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+    allowed-methods: ${CORS_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+    allowed-headers: ${CORS_HEADERS:*}
+    allow-credentials: true
+    max-age: 3600
+  
+  s3:
+    access-key-id: ${AWS_ACCESS_KEY_ID:}
+    secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
+    region: ${AWS_REGION:ap-northeast-2}
+    bucket-name: ${AWS_S3_BUCKET_NAME:}
+    base-url: ${AWS_S3_BASE_URL:}
+    profile-image-path: profile
+    post-image-path: posts
+    notice-image-path: notices
+    banner-image-path: banners
+    contouring-guide-path: personal-colors
+  
+  social:
+    naver:
+      client-id: ${NAVER_CLIENT_ID:}
+      client-secret: ${NAVER_CLIENT_SECRET:}
+      api-url: https://openapi.naver.com/v1/nid/me
+    kakao:
+      client-id: ${KAKAO_CLIENT_ID:}
+      client-secret: ${KAKAO_CLIENT_SECRET:}
+      api-url: https://kapi.kakao.com/v2/user/me
+
