@@ -38,3 +38,7 @@ export function getTailwindColor(name: ColorName, shade?: 'bg' | 'text' | 'borde
   return `${prefix}-digilog-${name}`
 }
 
+
+
+
+

@@ -37,7 +37,7 @@
         :size="iconSize"
         class="flex-shrink-0"
       />
-      <slot />
+    <slot />
       <Icon
         v-if="icon && iconRight"
         :name="icon"

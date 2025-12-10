@@ -39,13 +39,13 @@ const routes: RouteRecordRaw[] = [
         path: 'reports',
         name: 'Reports',
         component: () => import('@/pages/reports/ReportsPage.vue'),
-        beforeEnter: authGuard,
+        // beforeEnter: authGuard,
       },
       {
         path: 'reports/:reportId',
         name: 'ReportDetail',
         component: () => import('@/pages/reports/ReportDetailPage.vue'),
-        beforeEnter: authGuard,
+        // beforeEnter: authGuard,
       },
       {
         path: 'reports/:reportId/personal-color',

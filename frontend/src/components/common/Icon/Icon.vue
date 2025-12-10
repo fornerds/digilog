@@ -103,6 +103,14 @@ const loadIcon = async () => {
         )
       }
       
+      // SVG 루트에 color 속성 추가 (currentColor가 아닌 경우)
+      if (props.color && props.color !== 'currentColor') {
+        svgContent = svgContent.replace(
+          /<svg([^>]*)>/,
+          `<svg$1 color="${props.color}">`
+        )
+      }
+      
       iconSvg.value = svgContent
     } catch (error) {
       console.error(`Icon "${props.name}" not found:`, error)

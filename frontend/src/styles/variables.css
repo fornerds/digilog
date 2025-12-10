@@ -33,5 +33,29 @@
   --color-digilog-pink: #FFEDED;
   --color-digilog-peach: #FFEBEB;
   --color-digilog-burgundy: #B0003A;
-}
 
+  /* Figma 디자인 토큰 (graysacle) */
+  --graysacle-box3: #f9fafb;
+  --graysacle-box2: #f3f4f6;
+  --graysacle-line: #e5e7eb;
+  --graysacle-line-highlight: #d1d5db;
+  --graysacle-text: #374151;
+  --graysacle-subtext1: #4b5563;
+  --graysacle-subtext2: #6b7280;
+  --graysacle-subtext3: #959ba9;
+  --graysacle-black: #1f2937;
+
+  /* Figma 디자인 토큰 (beige) */
+  --beige3: #b59a79;
+  --beige5: #fffbf4;
+
+  /* Figma 디자인 토큰 (navy) */
+  --navy1: #0d2347;
+  --navy3: #304f82;
+  --navy4: #516d9c;
+  --navy5: #6e8ec3;
+
+  /* Figma 디자인 토큰 (graysacle 추가) */
+  --graysacle-box1: #eaebef;
+  --graysacle-line-weak: #eeeff1;
+}

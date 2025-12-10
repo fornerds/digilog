@@ -9,7 +9,15 @@
         "FIGMA_WS_PORT": "3055",
         "FIGMA_API_KEY": "${FIGMA_API_KEY}"
       }
+    },
+    "figma": {
+      "url": "https://mcp.figma.com/mcp",
+      "type": "http"
     }
   }
 }
+
+
+
+
 
