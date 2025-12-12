@@ -5,6 +5,7 @@ import svgLoader from 'vite-svg-loader'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/digilog/',
   plugins: [
     vue(),
     svgLoader(), // SVG를 Vue 컴포넌트로 사용할 수 있게 해주는 플러그인
