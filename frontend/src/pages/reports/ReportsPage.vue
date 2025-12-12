@@ -8,10 +8,35 @@
       <div class="reports-page__section">
         <div class="reports-page__toolbar">
           <div class="reports-page__count">총 {{ reports.length }}건</div>
-          <button class="reports-page__sort-button">
-            <span class="reports-page__sort-text">최신 순</span>
-            <Icon name="chevron-down" :size="12" color="#6b7280" />
-          </button>
+          <div class="reports-page__sort-wrapper">
+            <button 
+              class="reports-page__sort-button"
+              :class="{ 'reports-page__sort-button--open': isSortOpen }"
+              @click="toggleSortMenu"
+            >
+              <span class="reports-page__sort-text">{{ selectedSortOption }}</span>
+              <Icon 
+                name="chevron-down" 
+                :size="12" 
+                color="#6b7280"
+                :class="{ 'reports-page__sort-icon--rotated': isSortOpen }"
+              />
+            </button>
+            <div 
+              v-if="isSortOpen"
+              class="reports-page__sort-dropdown"
+            >
+              <button
+                v-for="option in sortOptions"
+                :key="option.value"
+                class="reports-page__sort-option"
+                :class="{ 'reports-page__sort-option--active': selectedSortOption === option.label }"
+                @click="selectSortOption(option)"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+          </div>
         </div>
         
         <div class="reports-page__list">
@@ -28,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ReportCard from '@/pages/home/components/ReportCard.vue'
 import Icon from '@/components/common/Icon/Icon.vue'
@@ -42,7 +67,45 @@ interface Report {
   scores?: Partial<AnalysisScores>
 }
 
+interface SortOption {
+  value: string
+  label: string
+}
+
 const router = useRouter()
+
+const isSortOpen = ref(false)
+const selectedSortOption = ref('최신 순')
+
+const sortOptions: SortOption[] = [
+  { value: 'latest', label: '최신 순' },
+  { value: 'oldest', label: '오래된 순' },
+]
+
+const toggleSortMenu = () => {
+  isSortOpen.value = !isSortOpen.value
+}
+
+const selectSortOption = (option: SortOption) => {
+  selectedSortOption.value = option.label
+  isSortOpen.value = false
+  // TODO: 실제 정렬 로직 구현
+}
+
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  if (!target.closest('.reports-page__sort-wrapper')) {
+    isSortOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 
 const reports = ref<Report[]>([
   {
@@ -154,7 +217,7 @@ const handleReportClick = (reportId: number) => {
 .reports-page {
   background-color: var(--graysacle-box3);
   min-height: 100vh;
-  padding: 44px 16px 40px;
+  padding: 54px 16px 40px;
 }
 
 .reports-page__content {
@@ -202,6 +265,10 @@ const handleReportClick = (reportId: number) => {
   white-space: nowrap;
 }
 
+.reports-page__sort-wrapper {
+  position: relative;
+}
+
 .reports-page__sort-button {
   background-color: var(--graysacle-box3);
   border: 1px solid var(--graysacle-subtext3);
@@ -218,6 +285,10 @@ const handleReportClick = (reportId: number) => {
   background-color: var(--graysacle-box2);
 }
 
+.reports-page__sort-button--open {
+  background-color: var(--graysacle-box2);
+}
+
 .reports-page__sort-text {
   font-family: 'SUIT', sans-serif;
   font-weight: 600;
@@ -225,6 +296,49 @@ const handleReportClick = (reportId: number) => {
   line-height: 1.35;
   color: var(--graysacle-subtext2);
   white-space: nowrap;
+}
+
+.reports-page__sort-icon--rotated {
+  transform: rotate(180deg);
+  transition: transform 0.2s;
+}
+
+.reports-page__sort-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background-color: white;
+  border: 1px solid var(--graysacle-line);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 120px;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.reports-page__sort-option {
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  background-color: white;
+  border: none;
+  cursor: pointer;
+  font-family: 'SUIT', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--graysacle-text);
+  transition: background-color 0.2s;
+}
+
+.reports-page__sort-option:hover {
+  background-color: var(--graysacle-box2);
+}
+
+.reports-page__sort-option--active {
+  background-color: var(--graysacle-box2);
+  font-weight: 600;
+  color: var(--navy4);
 }
 
 .reports-page__list {

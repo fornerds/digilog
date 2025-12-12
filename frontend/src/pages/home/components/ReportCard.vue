@@ -54,21 +54,46 @@ defineEmits<{
 
 const normalizedScores = computed(() => {
   const scores = props.report.scores || {}
-  const normalized: Partial<AnalysisScores & { redness?: number; keratin?: number }> = {}
+  const normalized: Record<string, number> = {}
   
-  const scoreKeys: (keyof (AnalysisScores & { redness?: number; keratin?: number }))[] = [
-    'pores',
-    'redness',
-    'blackheads',
-    'keratin',
-    'darkCircles',
-    'porphyrin',
-  ]
+  // RadarChart가 기대하는 6개 축: pores, redness, blackheads, keratin, darkCircles, porphyrin
+  // 데이터 매핑:
+  // - pores -> pores
+  // - redness -> redness (또는 sensitivity, pigmentation)
+  // - blackheads -> blackheads
+  // - keratin -> keratin (또는 wrinkles, pigmentation)
+  // - darkCircles -> darkCircles
+  // - porphyrin -> porphyrin
   
-  scoreKeys.forEach((key) => {
-    const value = scores[key as keyof AnalysisScores]
-    normalized[key] = value !== undefined && value !== null ? Math.max(0, value) : 0
-  })
+  normalized.pores = scores.pores !== undefined && scores.pores !== null ? Math.max(0, scores.pores) : 0
+  
+  // redness: redness가 있으면 사용, 없으면 sensitivity, 그것도 없으면 pigmentation
+  normalized.redness = scores.redness !== undefined && scores.redness !== null
+    ? Math.max(0, scores.redness)
+    : (scores.sensitivity !== undefined && scores.sensitivity !== null 
+      ? Math.max(0, scores.sensitivity) 
+      : (scores.pigmentation !== undefined && scores.pigmentation !== null ? Math.max(0, scores.pigmentation) : 0))
+  
+  // blackheads: 직접 매핑
+  normalized.blackheads = scores.blackheads !== undefined && scores.blackheads !== null 
+    ? Math.max(0, scores.blackheads) 
+    : 0
+  
+  // keratin: keratin이 있으면 사용, 없으면 wrinkles, 그것도 없으면 pigmentation
+  normalized.keratin = scores.keratin !== undefined && scores.keratin !== null
+    ? Math.max(0, scores.keratin)
+    : (scores.wrinkles !== undefined && scores.wrinkles !== null 
+      ? Math.max(0, scores.wrinkles) 
+      : (scores.pigmentation !== undefined && scores.pigmentation !== null ? Math.max(0, scores.pigmentation) : 0))
+  
+  normalized.darkCircles = scores.darkCircles !== undefined && scores.darkCircles !== null 
+    ? Math.max(0, scores.darkCircles) 
+    : (scores.pigmentation !== undefined && scores.pigmentation !== null ? Math.max(0, scores.pigmentation) : 0)
+  
+  // porphyrin: 직접 매핑
+  normalized.porphyrin = scores.porphyrin !== undefined && scores.porphyrin !== null 
+    ? Math.max(0, scores.porphyrin) 
+    : 0
   
   return normalized
 })

@@ -1,44 +1,37 @@
 <template>
-  <div class="recommendations-page">
-    <div class="recommendations-page__content">
-      <div class="recommendations-page__header">
-        <div class="recommendations-page__title">
-          <p>봄 웜 브라이트</p>
-          <p>이 제품을 추천해요!</p>
-        </div>
-      </div>
-      
-      <div class="recommendations-page__section">
-        <div class="recommendations-page__count">총 {{ products.length }}개 제품</div>
-        <div class="recommendations-page__products-grid">
+  <div class="liked-products-page">
+    <div class="liked-products-page__content">
+      <div class="liked-products-page__section">
+        <div class="liked-products-page__count">총 {{ products.length }}개 제품</div>
+        <div class="liked-products-page__products-grid">
           <div
             v-for="(product, index) in products"
             :key="product.id"
-            class="recommendations-page__product-card"
+            class="liked-products-page__product-card"
             @click="handleProductClick(product)"
           >
-            <div class="recommendations-page__product-image-wrapper">
+            <div class="liked-products-page__product-image-wrapper">
               <button 
-                class="recommendations-page__product-heart"
+                class="liked-products-page__product-heart"
                 @click.stop="toggleProductLike(index)"
               >
                 <span 
-                  class="recommendations-page__heart-icon"
+                  class="liked-products-page__heart-icon"
                   v-html="product.isLiked ? heartFilledIcon : heartOutlineIcon"
                 ></span>
               </button>
               <img
                 :src="product.image"
                 :alt="product.name"
-                class="recommendations-page__product-image"
+                class="liked-products-page__product-image"
               />
             </div>
-            <div class="recommendations-page__product-info">
-              <div class="recommendations-page__product-brand">{{ product.brand }}</div>
-              <div class="recommendations-page__product-name">{{ product.name }}</div>
-              <div class="recommendations-page__product-price">
-                <span class="recommendations-page__product-price-value">{{ formatPrice(product.price) }}</span>
-                <span class="recommendations-page__product-price-unit">원</span>
+            <div class="liked-products-page__product-info">
+              <div class="liked-products-page__product-brand">{{ product.brand }}</div>
+              <div class="liked-products-page__product-name">{{ product.name }}</div>
+              <div class="liked-products-page__product-price">
+                <span class="liked-products-page__product-price-value">{{ formatPrice(product.price) }}</span>
+                <span class="liked-products-page__product-price-unit">원</span>
               </div>
             </div>
           </div>
@@ -49,23 +42,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import example01 from '@/assets/images/example01.png'
 import example02 from '@/assets/images/example02.png'
 import example03 from '@/assets/images/example03.png'
-import example05 from '@/assets/images/example05.png'
-import example06 from '@/assets/images/example06.png'
-import example07 from '@/assets/images/example07.png'
-import example08 from '@/assets/images/example08.png'
-import example09 from '@/assets/images/example09.png'
 import heartFilledIcon from '@/assets/icons/heart-filled.svg?raw'
 import heartOutlineIcon from '@/assets/icons/heart-outline.svg?raw'
 
-const route = useRoute()
-const reportId = route.params.reportId as string
-
-const likedCount = inject<Ref<number>>('likedCount')
+const router = useRouter()
 
 interface Product {
   id: number
@@ -83,12 +68,12 @@ const products = ref<Product[]>([
     name: '무기자차 선크림',
     price: 22000,
     image: example01,
-    isLiked: false,
+    isLiked: true,
   },
   {
     id: 2,
     brand: '폴리초이스',
-    name: '나이아신마이드 세럼',
+    name: '나이아신아마이드 세럼',
     price: 45000,
     image: example02,
     isLiked: true,
@@ -101,64 +86,19 @@ const products = ref<Product[]>([
     image: example03,
     isLiked: true,
   },
-  {
-    id: 4,
-    brand: '클리니크',
-    name: '오일프리 수분 젤',
-    price: 48000,
-    image: example05,
-    isLiked: true,
-  },
-  {
-    id: 5,
-    brand: '라로슈포제',
-    name: '세라마이드 수분 크림',
-    price: 42000,
-    image: example06,
-    isLiked: false,
-  },
-  {
-    id: 6,
-    brand: '클리니크',
-    name: '오일프리 수분 젤',
-    price: 48000,
-    image: example07,
-    isLiked: false,
-  },
-  {
-    id: 7,
-    brand: '라로슈포제',
-    name: '세라마이드 수분 크림',
-    price: 42000,
-    image: example08,
-    isLiked: false,
-  },
-  {
-    id: 8,
-    brand: '클리니크',
-    name: '오일프리 수분 젤',
-    price: 48000,
-    image: example09,
-    isLiked: false,
-  },
 ])
-
-const likedCountComputed = computed(() => {
-  return products.value.filter(p => p.isLiked).length
-})
-
-watch(likedCountComputed, (newCount) => {
-  if (likedCount) {
-    likedCount.value = newCount
-  }
-}, { immediate: true })
 
 const handleProductClick = (product: Product) => {
   console.log('Product clicked:', product)
+  // TODO: 제품 상세 페이지로 이동 로직 추가
 }
 
 const toggleProductLike = (index: number) => {
   products.value[index].isLiked = !products.value[index].isLiked
+  // 좋아요 해제 시 목록에서 제거할 수도 있음
+  if (!products.value[index].isLiked) {
+    products.value.splice(index, 1)
+  }
 }
 
 const formatPrice = (price: number) => {
@@ -167,44 +107,27 @@ const formatPrice = (price: number) => {
 </script>
 
 <style scoped>
-.recommendations-page {
+.liked-products-page {
   background-color: var(--graysacle-box3);
   min-height: 100vh;
-  padding: 44px 16px 40px;
+  padding: 54px 0 100px;
 }
 
-.recommendations-page__content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.recommendations-page__header {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.recommendations-page__title {
-  font-family: 'SUIT', sans-serif;
-  font-weight: 700;
-  font-size: 20px;
-  line-height: 1.4;
-  color: var(--graysacle-black);
-  margin: 0;
-}
-
-.recommendations-page__title p {
-  margin: 0;
-}
-
-.recommendations-page__section {
+.liked-products-page__content {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 0 16px;
 }
 
-.recommendations-page__count {
+.liked-products-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.liked-products-page__count {
   font-family: 'SUIT', sans-serif;
   font-weight: 500;
   font-size: 14px;
@@ -213,14 +136,14 @@ const formatPrice = (price: number) => {
   padding: 0 4px;
 }
 
-.recommendations-page__products-grid {
+.liked-products-page__products-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 16px 7px;
   align-items: flex-start;
 }
 
-.recommendations-page__product-card {
+.liked-products-page__product-card {
   width: 168px;
   display: flex;
   flex-direction: column;
@@ -228,16 +151,16 @@ const formatPrice = (price: number) => {
   cursor: pointer;
 }
 
-.recommendations-page__product-image-wrapper {
+.liked-products-page__product-image-wrapper {
   position: relative;
   width: 168px;
-  height: 168px;
+  aspect-ratio: 1;
   overflow: hidden;
   border-radius: 4px;
   margin-bottom: 10px;
 }
 
-.recommendations-page__product-heart {
+.liked-products-page__product-heart {
   position: absolute;
   top: 0;
   right: 0;
@@ -253,7 +176,7 @@ const formatPrice = (price: number) => {
   cursor: pointer;
 }
 
-.recommendations-page__heart-icon {
+.liked-products-page__heart-icon {
   width: 23px;
   height: 21px;
   flex-shrink: 0;
@@ -263,13 +186,13 @@ const formatPrice = (price: number) => {
   filter: drop-shadow(0 0 14.9px rgba(0, 0, 0, 0.12));
 }
 
-.recommendations-page__heart-icon :deep(svg) {
+.liked-products-page__heart-icon :deep(svg) {
   width: 23px;
   height: 21px;
   display: block;
 }
 
-.recommendations-page__product-image {
+.liked-products-page__product-image {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -279,7 +202,7 @@ const formatPrice = (price: number) => {
   border-radius: 4px;
 }
 
-.recommendations-page__product-info {
+.liked-products-page__product-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -288,7 +211,7 @@ const formatPrice = (price: number) => {
   padding: 0;
 }
 
-.recommendations-page__product-brand {
+.liked-products-page__product-brand {
   font-family: 'SUIT', sans-serif;
   font-weight: 700;
   font-size: 12px;
@@ -297,7 +220,7 @@ const formatPrice = (price: number) => {
   width: 100%;
 }
 
-.recommendations-page__product-name {
+.liked-products-page__product-name {
   font-family: 'SUIT', sans-serif;
   font-weight: 500;
   font-size: 14px;
@@ -309,7 +232,7 @@ const formatPrice = (price: number) => {
   width: 100%;
 }
 
-.recommendations-page__product-price {
+.liked-products-page__product-price {
   display: flex;
   gap: 2px;
   align-items: flex-start;
@@ -319,15 +242,16 @@ const formatPrice = (price: number) => {
   width: 100%;
 }
 
-.recommendations-page__product-price-value {
+.liked-products-page__product-price-value {
   font-family: 'SUIT', sans-serif;
   font-weight: 800;
   color: var(--graysacle-text);
 }
 
-.recommendations-page__product-price-unit {
+.liked-products-page__product-price-unit {
   font-family: 'SUIT', sans-serif;
   font-weight: 500;
   color: var(--graysacle-subtext1);
 }
 </style>
+

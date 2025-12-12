@@ -137,7 +137,10 @@
             <p>DS타입에겐</p>
             <p>이 제품을 추천해요!</p>
           </div>
-          <button class="report-detail-page__products-more">
+          <button 
+            class="report-detail-page__products-more"
+            @click="handleMoreClick"
+          >
             <Icon name="chevron-right" :size="16" color="#4b5563" />
           </button>
         </div>
@@ -181,7 +184,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import * as d3 from 'd3'
 import Icon from '@/components/common/Icon/Icon.vue'
 import { RadarChart } from '@/components/common/RadarChart'
@@ -193,6 +196,7 @@ import heartOutlineIcon from '@/assets/icons/heart-outline.svg?raw'
 import type { AnalysisScores } from '@/types/report.types'
 
 const route = useRoute()
+const router = useRouter()
 
 const reportId = computed(() => route.params.reportId as string)
 
@@ -261,6 +265,10 @@ const handleProductClick = (product: typeof recommendedProducts.value[0]) => {
   console.log('Product clicked:', product)
 }
 
+const handleMoreClick = () => {
+  router.push(`/reports/${reportId.value}/recommendations`)
+}
+
 const toggleProductLike = (index: number) => {
   recommendedProducts.value[index].isLiked = !recommendedProducts.value[index].isLiked
 }
@@ -310,7 +318,7 @@ onMounted(() => {
 .report-detail-page {
   background-color: var(--graysacle-box3);
   min-height: 100vh;
-  padding: 10px 16px 100px;
+  padding: 54px 16px 100px;
 }
 
 .report-detail-page__content {

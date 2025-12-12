@@ -118,6 +118,9 @@ onUnmounted(() => {
 .hero-banner {
   position: relative;
   width: 100%;
+  margin-top: 0;
+  padding-top: 0;
+  z-index: 1;
 }
 
 .hero-banner__container {

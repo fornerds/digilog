@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22" fill="none">
+  <mask id="mask0_contouring" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="22" height="22">
+    <path d="M6.35059 11.4188L17.7161 1.47328C17.7161 1.47328 18.781 0.408404 19.8468 1.47328C20.9122 2.53915 19.8468 3.60453 19.8468 3.60453L9.90184 14.9705L6.35059 11.4188Z" fill="white" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M9.54688 8.93262L12.3884 11.7741" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M1.02269 13.9053L6.35057 11.4189L9.90182 14.9712L7.41544 20.2986C7.41544 20.2986 4.92906 20.6537 2.79831 18.523C0.667062 16.3917 1.02269 13.9053 1.02269 13.9053Z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M1.7334 16.747L4.21978 15.6816M4.5749 19.5885L5.28565 18.168" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M7.77148 10.1758L9.19198 8.93264L10.6125 7.68945M13.6313 10.7083L12.3881 12.1288L11.1449 13.5498" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+  </mask>
+  <g mask="url(#mask0_contouring)">
+    <path d="M-1.73633 -1.55469H22.374V22.5556H-1.73633V-1.55469Z" fill="currentColor"/>
+  </g>
+</svg>
+

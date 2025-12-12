@@ -50,12 +50,15 @@ const loadIcon = async () => {
       const iconModule = await import(`@/assets/icons/${props.name}.svg?raw`)
       let svgContent = iconModule.default
       
-      // clipPath ID를 고유하게 만들기 (여러 인스턴스 충돌 방지)
+      // clipPath와 mask ID를 고유하게 만들기 (여러 인스턴스 충돌 방지)
       const uniqueId = `${props.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       svgContent = svgContent.replace(/clip-path="url\(#([^)]+)\)"/g, (match, id) => {
         return `clip-path="url(#${id}_${uniqueId})"`
       })
-      svgContent = svgContent.replace(/id="([^"]*clip[^"]*)"/g, (match, id) => {
+      svgContent = svgContent.replace(/mask="url\(#([^)]+)\)"/g, (match, id) => {
+        return `mask="url(#${id}_${uniqueId})"`
+      })
+      svgContent = svgContent.replace(/id="([^"]*(?:clip|mask)[^"]*)"/g, (match, id) => {
         return `id="${id}_${uniqueId}"`
       })
       svgContent = svgContent.replace(/url\(#([^)]+)\)/g, (match, id) => {

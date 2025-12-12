@@ -21,6 +21,9 @@ import CommunitySection from './components/CommunitySection.vue'
   background-color: var(--graysacle-box3);
   min-height: 100vh;
   position: relative;
+  margin-top: 0;
+  padding-top: 0;
+  width: 100%;
 }
 
 .home-page__content {
