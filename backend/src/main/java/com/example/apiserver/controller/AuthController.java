@@ -65,5 +65,31 @@ public class AuthController {
 
         return ResponseEntity.ok(ApiResponse.success(data));
     }
+
+    @Operation(summary = "토큰 재발급", description = "Refresh Token을 사용하여 새로운 Access Token 발급")
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> refreshToken(
+            jakarta.servlet.http.HttpServletRequest request,
+            HttpServletResponse response) {
+        String newAccessToken = authService.refreshToken(request, response);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("token", newAccessToken);
+
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    @Operation(summary = "이메일 중복 확인", description = "회원가입 전 이메일 중복 여부 확인")
+    @GetMapping("/check-email")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> checkEmail(
+            @RequestParam(required = false) String email) {
+        boolean available = authService.checkEmailAvailable(email);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("email", email != null ? email : "");
+        data.put("available", available);
+
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
 }
 

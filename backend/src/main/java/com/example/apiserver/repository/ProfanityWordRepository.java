@@ -9,7 +9,7 @@ import java.util.List;
 @Repository
 public interface ProfanityWordRepository extends BaseRepository<ProfanityWord, Long> {
     
-    @Query("SELECT pw.word FROM ProfanityWord pw WHERE pw.deletedAt IS NULL")
+    @Query("SELECT pw.word FROM ProfanityWord pw WHERE pw.isDeleted = false")
     List<String> findAllWords();
 }
 

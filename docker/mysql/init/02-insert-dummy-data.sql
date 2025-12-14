@@ -3,7 +3,8 @@
 -- BCrypt는 매번 다른 salt를 사용하므로 같은 비밀번호라도 해시가 다릅니다 (정상 동작)
 -- 실제 생성된 해시: $2a$10$eoX42Af4a1eKEc/fV7PaxuXjW1kMLOkrHm5negDrYxOqHzOjjC8o6
 
-USE digilog_dev;
+-- 현재 데이터베이스 사용 (MYSQL_DATABASE 환경 변수로 생성된 데이터베이스)
+-- MySQL init 스크립트는 이미 올바른 데이터베이스에 연결되어 있습니다
 
 -- 문자셋 설정 (한글 지원)
 SET NAMES utf8mb4;

@@ -75,7 +75,7 @@ public class SkinAnalysisReportService extends BaseService<SkinAnalysisReport, L
 
     @Transactional
     public SkinAnalysisReportResponse createReportForAdmin(SkinAnalysisReportRequest.CreateAdmin request) {
-        User user = userRepository.findByIdAndDeletedAtIsNull(request.getUserId())
+        User user = userRepository.findByIdAndIsDeletedFalse(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다"));
 
         String skinTagsJson = request.getSkinTags() != null ? jsonConverter.toJson(request.getSkinTags()) : null;

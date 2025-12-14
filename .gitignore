@@ -5,6 +5,7 @@
 
 # Docker
 .docker/
+mysql-data/
 
 # IDE
 .idea/

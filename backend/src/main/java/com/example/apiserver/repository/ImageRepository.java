@@ -7,6 +7,6 @@ import java.util.Optional;
 
 @Repository
 public interface ImageRepository extends BaseRepository<Image, Long> {
-    Optional<Image> findByUrlAndDeletedAtIsNull(String url);
+    Optional<Image> findByUrlAndIsDeletedFalse(String url);
 }
 

@@ -1,17 +1,14 @@
 -- 모든 테이블 생성
 -- JPA가 자동으로 생성하는 스키마와 일치하도록 작성
 -- 한글 지원을 위해 utf8mb4 문자셋 사용
-
--- 데이터베이스 문자셋 확인 및 설정
-ALTER DATABASE digilog_dev CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE digilog_dev;
+-- (문자셋 설정은 00-set-charset.sql에서 이미 처리됨)
 
 -- 1. images 테이블 (다른 테이블에서 참조하므로 먼저 생성)
 CREATE TABLE IF NOT EXISTS images (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     url VARCHAR(500) NOT NULL,
     PRIMARY KEY (id)
@@ -22,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     email VARCHAR(100) NOT NULL,
     name VARCHAR(50) NOT NULL,
@@ -36,11 +34,28 @@ CREATE TABLE IF NOT EXISTS users (
     UNIQUE KEY UK_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 2-1. refresh_tokens 테이블
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    created_at DATETIME(6) NOT NULL,
+    deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at DATETIME(6) DEFAULT NULL,
+    token VARCHAR(500) NOT NULL,
+    user_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY UK_refresh_tokens_token (token),
+    KEY idx_refresh_tokens_user_id (user_id),
+    KEY idx_refresh_tokens_token (token),
+    CONSTRAINT FK_refresh_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 3. posts 테이블
 CREATE TABLE IF NOT EXISTS posts (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
@@ -56,6 +71,7 @@ CREATE TABLE IF NOT EXISTS comments (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     content TEXT NOT NULL,
     post_id BIGINT NOT NULL,
@@ -72,6 +88,7 @@ CREATE TABLE IF NOT EXISTS post_likes (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     post_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
@@ -88,6 +105,7 @@ CREATE TABLE IF NOT EXISTS notices (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     type VARCHAR(20) NOT NULL,
     title VARCHAR(255) NOT NULL,
@@ -103,6 +121,7 @@ CREATE TABLE IF NOT EXISTS banners (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT DEFAULT NULL,
@@ -117,6 +136,7 @@ CREATE TABLE IF NOT EXISTS skin_analysis_reports (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     user_id BIGINT NOT NULL,
     user_age INT NOT NULL,
@@ -145,6 +165,7 @@ CREATE TABLE IF NOT EXISTS personal_color_colors (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     name VARCHAR(100) NOT NULL,
     hex_code VARCHAR(7) NOT NULL,
@@ -157,6 +178,7 @@ CREATE TABLE IF NOT EXISTS personal_color_diagnoses (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     user_id BIGINT NOT NULL,
     personal_color VARCHAR(20) NOT NULL,
@@ -183,6 +205,7 @@ CREATE TABLE IF NOT EXISTS personal_color_diagnosis_colors (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     diagnosis_id BIGINT NOT NULL,
     color_id BIGINT NOT NULL,
@@ -199,6 +222,7 @@ CREATE TABLE IF NOT EXISTS products (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     name VARCHAR(255) NOT NULL,
     brand VARCHAR(100) NOT NULL,
@@ -217,6 +241,7 @@ CREATE TABLE IF NOT EXISTS product_wishes (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     product_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
@@ -233,6 +258,7 @@ CREATE TABLE IF NOT EXISTS product_skin_codes (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     product_id BIGINT NOT NULL,
     skin_code VARCHAR(10) NOT NULL,
@@ -247,6 +273,7 @@ CREATE TABLE IF NOT EXISTS product_personal_colors (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     product_id BIGINT NOT NULL,
     personal_color VARCHAR(20) NOT NULL,
@@ -261,6 +288,7 @@ CREATE TABLE IF NOT EXISTS profanity_words (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     word VARCHAR(100) NOT NULL,
     PRIMARY KEY (id),
@@ -272,6 +300,7 @@ CREATE TABLE IF NOT EXISTS post_images (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     post_id BIGINT NOT NULL,
     image_id BIGINT NOT NULL,
@@ -287,6 +316,7 @@ CREATE TABLE IF NOT EXISTS notice_images (
     id BIGINT NOT NULL AUTO_INCREMENT,
     created_at DATETIME(6) NOT NULL,
     deleted_at DATETIME(6) DEFAULT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
     notice_id BIGINT NOT NULL,
     image_id BIGINT NOT NULL,

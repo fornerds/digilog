@@ -47,7 +47,7 @@ public class BannerService extends BaseService<Banner, Long> {
 
     @Transactional
     public BannerResponse createBanner(BannerRequest.Create request) {
-        Image image = imageRepository.findByUrlAndDeletedAtIsNull(request.getImageUrl())
+        Image image = imageRepository.findByUrlAndIsDeletedFalse(request.getImageUrl())
                 .orElseThrow(() -> new ResourceNotFoundException("이미지를 찾을 수 없습니다"));
 
         Banner banner = Banner.builder()
@@ -71,7 +71,7 @@ public class BannerService extends BaseService<Banner, Long> {
             banner.updateDescription(request.getDescription());
         }
         if (request.getImageUrl() != null) {
-            Image image = imageRepository.findByUrlAndDeletedAtIsNull(request.getImageUrl())
+            Image image = imageRepository.findByUrlAndIsDeletedFalse(request.getImageUrl())
                     .orElseThrow(() -> new ResourceNotFoundException("이미지를 찾을 수 없습니다"));
             banner.updateImage(image);
         }

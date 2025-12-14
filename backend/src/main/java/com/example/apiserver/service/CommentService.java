@@ -36,7 +36,7 @@ public class CommentService extends BaseService<Comment, Long> {
 
     public Page<CommentResponse> getComments(Long postId, int page, int limit, String sortBy, String order) {
         // 게시글 존재 확인
-        postRepository.findByIdAndDeletedAtIsNull(postId)
+        postRepository.findByIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다"));
 
         Pageable pageable = createPageable(page, limit, sortBy, order);
@@ -50,10 +50,10 @@ public class CommentService extends BaseService<Comment, Long> {
 
     @Transactional
     public CommentResponse createComment(Long postId, Long userId, String content) {
-        Post post = postRepository.findByIdAndDeletedAtIsNull(postId)
+        Post post = postRepository.findByIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다"));
 
-        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다"));
 
         Comment comment = Comment.builder()
@@ -89,6 +89,7 @@ public class CommentService extends BaseService<Comment, Long> {
         }
 
         comment.softDelete();
+        commentRepository.save(comment); // soft delete 후 저장
     }
 
     private Pageable createPageable(int page, int limit, String sortBy, String order) {
@@ -118,10 +119,10 @@ public class CommentService extends BaseService<Comment, Long> {
 
     @Transactional
     public CommentResponse createCommentForAdmin(com.example.apiserver.dto.comment.CommentRequest.CreateAdmin request) {
-        Post post = postRepository.findByIdAndDeletedAtIsNull(request.getPostId())
+        Post post = postRepository.findByIdAndIsDeletedFalse(request.getPostId())
                 .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다"));
 
-        User user = userRepository.findByIdAndDeletedAtIsNull(request.getUserId())
+        User user = userRepository.findByIdAndIsDeletedFalse(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다"));
 
         // 관리자가 생성하는 댓글은 비속어 검사를 건너뜁니다
@@ -148,6 +149,7 @@ public class CommentService extends BaseService<Comment, Long> {
     public void deleteCommentForAdmin(Long commentId) {
         Comment comment = findById(commentId);
         comment.softDelete();
+        commentRepository.save(comment); // soft delete 후 저장
     }
 }
 

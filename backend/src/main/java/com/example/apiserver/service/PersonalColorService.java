@@ -95,7 +95,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
     }
 
     public PersonalColorColorResponse getColorForAdmin(Long colorId) {
-        PersonalColorColor color = colorRepository.findByIdAndDeletedAtIsNull(colorId)
+        PersonalColorColor color = colorRepository.findByIdAndIsDeletedFalse(colorId)
                 .orElseThrow(() -> new ResourceNotFoundException("색상을 찾을 수 없습니다"));
         
         return PersonalColorColorResponse.builder()
@@ -125,7 +125,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
 
     @Transactional
     public PersonalColorColorResponse updateColorForAdmin(Long colorId, PersonalColorRequest.UpdateColor request) {
-        PersonalColorColor color = colorRepository.findByIdAndDeletedAtIsNull(colorId)
+        PersonalColorColor color = colorRepository.findByIdAndIsDeletedFalse(colorId)
                 .orElseThrow(() -> new ResourceNotFoundException("색상을 찾을 수 없습니다"));
         
         if (request.getName() != null) {
@@ -148,11 +148,11 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
 
     @Transactional
     public void deleteColorForAdmin(Long colorId) {
-        PersonalColorColor color = colorRepository.findByIdAndDeletedAtIsNull(colorId)
+        PersonalColorColor color = colorRepository.findByIdAndIsDeletedFalse(colorId)
                 .orElseThrow(() -> new ResourceNotFoundException("색상을 찾을 수 없습니다"));
         
         // 다른 진단에서 사용 중인지 확인
-        List<PersonalColorDiagnosis> diagnoses = diagnosisRepository.findAllByDeletedAtIsNull().stream()
+        List<PersonalColorDiagnosis> diagnoses = diagnosisRepository.findAllByIsDeletedFalse().stream()
                 .filter(d -> d.getDiagnosisColors().stream()
                         .anyMatch(dc -> !dc.isDeleted() && dc.getColor().getId().equals(colorId)))
                 .collect(Collectors.toList());
@@ -193,7 +193,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
 
     @Transactional
     public PersonalColorResponse createDiagnosisForAdmin(PersonalColorRequest.CreateDiagnosis request) {
-        User user = userRepository.findByIdAndDeletedAtIsNull(request.getUserId())
+        User user = userRepository.findByIdAndIsDeletedFalse(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다"));
 
         String typeDescriptionsJson = jsonConverter.toJson(request.getTypeDescriptions());
@@ -201,7 +201,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
 
         Image contouringGuideImage = null;
         if (request.getContouringGuideUrl() != null && !request.getContouringGuideUrl().isBlank()) {
-            contouringGuideImage = imageRepository.findByUrlAndDeletedAtIsNull(request.getContouringGuideUrl())
+            contouringGuideImage = imageRepository.findByUrlAndIsDeletedFalse(request.getContouringGuideUrl())
                     .orElse(null);
         }
 
@@ -225,7 +225,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
 
         // 어울리는 색상 연결
         for (Long colorId : request.getMatchingColors().getColorIds()) {
-            PersonalColorColor color = colorRepository.findByIdAndDeletedAtIsNull(colorId)
+            PersonalColorColor color = colorRepository.findByIdAndIsDeletedFalse(colorId)
                     .orElseThrow(() -> new ResourceNotFoundException("색상을 찾을 수 없습니다: " + colorId));
             PersonalColorDiagnosisColor diagnosisColor = PersonalColorDiagnosisColor.builder()
                     .diagnosis(savedDiagnosis)
@@ -237,7 +237,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
 
         // 안 어울리는 색상 연결
         for (Long colorId : request.getNonMatchingColors().getColorIds()) {
-            PersonalColorColor color = colorRepository.findByIdAndDeletedAtIsNull(colorId)
+            PersonalColorColor color = colorRepository.findByIdAndIsDeletedFalse(colorId)
                     .orElseThrow(() -> new ResourceNotFoundException("색상을 찾을 수 없습니다: " + colorId));
             PersonalColorDiagnosisColor diagnosisColor = PersonalColorDiagnosisColor.builder()
                     .diagnosis(savedDiagnosis)
@@ -290,7 +290,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
             // 새 색상 연결
             if (request.getMatchingColors().getColorIds() != null) {
                 for (Long colorId : request.getMatchingColors().getColorIds()) {
-                    PersonalColorColor color = colorRepository.findByIdAndDeletedAtIsNull(colorId)
+                    PersonalColorColor color = colorRepository.findByIdAndIsDeletedFalse(colorId)
                             .orElseThrow(() -> new ResourceNotFoundException("색상을 찾을 수 없습니다: " + colorId));
                     PersonalColorDiagnosisColor diagnosisColor = PersonalColorDiagnosisColor.builder()
                             .diagnosis(diagnosis)
@@ -311,7 +311,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
             // 새 색상 연결
             if (request.getNonMatchingColors().getColorIds() != null) {
                 for (Long colorId : request.getNonMatchingColors().getColorIds()) {
-                    PersonalColorColor color = colorRepository.findByIdAndDeletedAtIsNull(colorId)
+                    PersonalColorColor color = colorRepository.findByIdAndIsDeletedFalse(colorId)
                             .orElseThrow(() -> new ResourceNotFoundException("색상을 찾을 수 없습니다: " + colorId));
                     PersonalColorDiagnosisColor diagnosisColor = PersonalColorDiagnosisColor.builder()
                             .diagnosis(diagnosis)
@@ -326,7 +326,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
             if (request.getContouringGuideUrl().isBlank()) {
                 diagnosis.updateContouringGuideImage(null);
             } else {
-                Image image = imageRepository.findByUrlAndDeletedAtIsNull(request.getContouringGuideUrl())
+                Image image = imageRepository.findByUrlAndIsDeletedFalse(request.getContouringGuideUrl())
                         .orElse(null);
                 diagnosis.updateContouringGuideImage(image);
             }

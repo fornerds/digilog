@@ -12,12 +12,12 @@ public abstract class BaseService<T extends BaseEntity, ID> {
     
     public T findById(ID id) {
         return getRepository()
-                .findByIdAndDeletedAtIsNull(id)
+                .findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found with id: " + id));
     }
     
     public List<T> findAll() {
-        return getRepository().findAllByDeletedAtIsNull();
+        return getRepository().findAllByIsDeletedFalse();
     }
     
     public T save(T entity) {
@@ -31,7 +31,7 @@ public abstract class BaseService<T extends BaseEntity, ID> {
     }
     
     public boolean existsById(ID id) {
-        return getRepository().existsByIdAndDeletedAtIsNull(id);
+        return getRepository().existsByIdAndIsDeletedFalse(id);
     }
 }
 

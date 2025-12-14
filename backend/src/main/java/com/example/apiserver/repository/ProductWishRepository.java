@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface ProductWishRepository extends BaseRepository<ProductWish, Long> {
     
     @Query("SELECT pw FROM ProductWish pw WHERE pw.product.id = :productId " +
-           "AND pw.user.id = :userId AND pw.deletedAt IS NULL")
+           "AND pw.user.id = :userId AND pw.isDeleted = false")
     Optional<ProductWish> findByProductIdAndUserId(@Param("productId") Long productId, 
                                                     @Param("userId") Long userId);
 }

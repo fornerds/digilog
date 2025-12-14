@@ -33,6 +33,7 @@ public class PostService extends BaseService<Post, Long> {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
+    private final PostImageRepository postImageRepository;
     private final PostLikeRepository postLikeRepository;
     private final CommentRepository commentRepository;
     private final ProfanityService profanityService;
@@ -132,7 +133,7 @@ public class PostService extends BaseService<Post, Long> {
 
     @Transactional
     public PostResponse createPost(Long authorId, PostRequest.Create request) {
-        User author = userRepository.findByIdAndDeletedAtIsNull(authorId)
+        User author = userRepository.findByIdAndIsDeletedFalse(authorId)
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다"));
 
         // 비속어 검사
@@ -162,7 +163,7 @@ public class PostService extends BaseService<Post, Long> {
         // 이미지 연결
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
             for (String imageUrl : request.getImageUrls()) {
-                Image image = imageRepository.findByUrlAndDeletedAtIsNull(imageUrl)
+                Image image = imageRepository.findByUrlAndIsDeletedFalse(imageUrl)
                         .orElse(null);
                 if (image != null) {
                     PostImage postImage = PostImage.builder()
@@ -227,7 +228,7 @@ public class PostService extends BaseService<Post, Long> {
 
             // 새 이미지 연결
             for (String imageUrl : request.getImageUrls()) {
-                Image image = imageRepository.findByUrlAndDeletedAtIsNull(imageUrl)
+                Image image = imageRepository.findByUrlAndIsDeletedFalse(imageUrl)
                         .orElse(null);
                 if (image != null) {
                     PostImage postImage = PostImage.builder()
@@ -307,7 +308,7 @@ public class PostService extends BaseService<Post, Long> {
 
     @Transactional
     public PostResponse createPostForAdmin(PostRequest.CreateAdmin request) {
-        User author = userRepository.findByIdAndDeletedAtIsNull(request.getAuthorId())
+        User author = userRepository.findByIdAndIsDeletedFalse(request.getAuthorId())
                 .orElseThrow(() -> new ResourceNotFoundException("작성자를 찾을 수 없습니다"));
 
         // 관리자가 생성하는 게시글은 비속어 검사를 건너뜁니다
@@ -323,21 +324,24 @@ public class PostService extends BaseService<Post, Long> {
         Post savedPost = postRepository.save(post);
 
         // 이미지 연결
+        List<String> imageUrls = new ArrayList<>();
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
             for (String imageUrl : request.getImageUrls()) {
-                Image image = imageRepository.findByUrlAndDeletedAtIsNull(imageUrl)
+                Image image = imageRepository.findByUrlAndIsDeletedFalse(imageUrl)
                         .orElse(null);
                 if (image != null) {
                     PostImage postImage = PostImage.builder()
                             .post(savedPost)
                             .image(image)
                             .build();
+                    postImageRepository.save(postImage);
                     savedPost.getPostImages().add(postImage);
+                    imageUrls.add(image.getUrl());
                 }
             }
         }
 
-        return PostResponse.from(savedPost, author, getPostImageUrls(savedPost.getId()), 0L, 0L);
+        return PostResponse.from(savedPost, author, imageUrls, 0L, 0L);
     }
 
     @Transactional
@@ -367,7 +371,7 @@ public class PostService extends BaseService<Post, Long> {
 
             // 새 이미지 연결
             for (String imageUrl : request.getImageUrls()) {
-                Image image = imageRepository.findByUrlAndDeletedAtIsNull(imageUrl)
+                Image image = imageRepository.findByUrlAndIsDeletedFalse(imageUrl)
                         .orElse(null);
                 if (image != null) {
                     PostImage postImage = PostImage.builder()
@@ -405,11 +409,10 @@ public class PostService extends BaseService<Post, Long> {
         post.softDelete();
         
         // 관련 댓글도 함께 삭제
-        List<Comment> comments = commentRepository.findAll().stream()
-                .filter(c -> c.getPost().getId().equals(postId) && !c.isDeleted())
-                .collect(Collectors.toList());
+        List<Comment> comments = commentRepository.findByPostIdAndIsDeletedFalse(postId);
         for (Comment comment : comments) {
             comment.softDelete();
+            commentRepository.save(comment);
         }
         
         // 이미지 삭제
@@ -434,7 +437,7 @@ public class PostService extends BaseService<Post, Long> {
                 s3Service.deleteFiles(imageUrls);
                 // Image 엔티티도 소프트 삭제
                 for (String url : imageUrls) {
-                    imageRepository.findByUrlAndDeletedAtIsNull(url)
+                    imageRepository.findByUrlAndIsDeletedFalse(url)
                             .ifPresent(Image::softDelete);
                 }
                 break;
@@ -442,7 +445,7 @@ public class PostService extends BaseService<Post, Long> {
                 // DB에서만 삭제 표시, S3는 보관
                 // 나중에 주기적으로 사용하지 않는 이미지 정리 필요
                 for (String url : imageUrls) {
-                    imageRepository.findByUrlAndDeletedAtIsNull(url)
+                    imageRepository.findByUrlAndIsDeletedFalse(url)
                             .ifPresent(Image::softDelete);
                 }
                 // TODO: 스케줄러로 주기적으로 사용하지 않는 이미지 정리 구현 필요

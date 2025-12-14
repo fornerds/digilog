@@ -4,12 +4,14 @@ import com.example.apiserver.dto.user.UserRequest;
 import com.example.apiserver.dto.user.UserResponse;
 import com.example.apiserver.entity.Gender;
 import com.example.apiserver.entity.Provider;
+import com.example.apiserver.entity.RefreshToken;
 import com.example.apiserver.entity.User;
 import com.example.apiserver.entity.UserRole;
 import com.example.apiserver.exception.BadRequestException;
 import com.example.apiserver.exception.ResourceNotFoundException;
 import com.example.apiserver.exception.UnauthorizedException;
 import com.example.apiserver.repository.BaseRepository;
+import com.example.apiserver.repository.RefreshTokenRepository;
 import com.example.apiserver.repository.UserRepository;
 import com.example.apiserver.util.SocialLoginDataParser;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class UserService extends BaseService<User, Long> {
     private final PasswordEncoder passwordEncoder;
     private final SocialLoginService socialLoginService;
     private final S3Service s3Service;
+    private final RefreshTokenRepository refreshTokenRepository;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     @Override
@@ -51,13 +54,13 @@ public class UserService extends BaseService<User, Long> {
         }
 
         // 이메일 중복 체크
-        if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail())) {
+        if (userRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
             throw new BadRequestException("이미 등록된 이메일입니다");
         }
 
         // 휴대폰 번호 중복 체크
         String normalizedPhone = normalizePhone(request.getPhone());
-        if (normalizedPhone != null && userRepository.existsByPhoneAndDeletedAtIsNull(normalizedPhone)) {
+        if (normalizedPhone != null && userRepository.existsByPhoneAndIsDeletedFalse(normalizedPhone)) {
             throw new BadRequestException("이미 등록된 휴대폰 번호입니다");
         }
 
@@ -132,7 +135,7 @@ public class UserService extends BaseService<User, Long> {
         }
 
         // 기존 사용자 확인
-        User user = userRepository.findByEmailAndProviderAndDeletedAtIsNull(socialUserInfo.getEmail(), provider)
+        User user = userRepository.findByEmailAndProviderAndIsDeletedFalse(socialUserInfo.getEmail(), provider)
                 .orElse(null);
 
         boolean isNewUser = false;
@@ -181,7 +184,7 @@ public class UserService extends BaseService<User, Long> {
     }
 
     public User findByEmail(String email) {
-        return userRepository.findByEmailAndDeletedAtIsNull(email)
+        return userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다"));
     }
 
@@ -201,8 +204,8 @@ public class UserService extends BaseService<User, Long> {
         if (request.getPhone() != null && !request.getPhone().isBlank()) {
             String normalizedPhone = normalizePhone(request.getPhone());
             // 다른 사용자가 사용 중인지 확인
-            if (normalizedPhone != null && userRepository.existsByPhoneAndDeletedAtIsNull(normalizedPhone)) {
-                User existingUser = userRepository.findByEmailAndDeletedAtIsNull(user.getEmail())
+            if (normalizedPhone != null && userRepository.existsByPhoneAndIsDeletedFalse(normalizedPhone)) {
+                User existingUser = userRepository.findByEmailAndIsDeletedFalse(user.getEmail())
                         .orElse(null);
                 if (existingUser == null || !existingUser.getId().equals(userId)) {
                     throw new BadRequestException("이미 사용 중인 휴대폰 번호입니다");
@@ -231,8 +234,8 @@ public class UserService extends BaseService<User, Long> {
 
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             // 다른 사용자가 사용 중인지 확인
-            if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail())) {
-                User existingUser = userRepository.findByEmailAndDeletedAtIsNull(request.getEmail())
+            if (userRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
+                User existingUser = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
                         .orElse(null);
                 if (existingUser == null || !existingUser.getId().equals(userId)) {
                     throw new BadRequestException("이미 사용 중인 이메일입니다");
@@ -262,8 +265,8 @@ public class UserService extends BaseService<User, Long> {
         if (request.getPhone() != null && !request.getPhone().isBlank()) {
             String normalizedPhone = normalizePhone(request.getPhone());
             // 다른 사용자가 사용 중인지 확인
-            if (normalizedPhone != null && userRepository.existsByPhoneAndDeletedAtIsNull(normalizedPhone)) {
-                User existingUser = userRepository.findByPhoneAndDeletedAtIsNull(normalizedPhone);
+            if (normalizedPhone != null && userRepository.existsByPhoneAndIsDeletedFalse(normalizedPhone)) {
+                User existingUser = userRepository.findByPhoneAndIsDeletedFalse(normalizedPhone);
                 if (existingUser != null && !existingUser.getId().equals(userId)) {
                     throw new BadRequestException("이미 사용 중인 휴대폰 번호입니다");
                 }
@@ -328,6 +331,10 @@ public class UserService extends BaseService<User, Long> {
                 throw new UnauthorizedException("비밀번호가 올바르지 않습니다");
             }
         }
+
+        // Refresh token 삭제
+        refreshTokenRepository.findByUserAndIsDeletedFalse(user)
+                .ifPresent(RefreshToken::softDelete);
 
         // 소프트 삭제
         user.softDelete();
@@ -409,13 +416,13 @@ public class UserService extends BaseService<User, Long> {
     @Transactional
     public UserResponse createUserForAdmin(UserRequest.CreateAdmin request) {
         // 이메일 중복 체크
-        if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail())) {
+        if (userRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
             throw new BadRequestException("이미 등록된 이메일입니다");
         }
 
         // 휴대폰 번호 중복 체크
         String normalizedPhone = normalizePhone(request.getPhone());
-        if (normalizedPhone != null && userRepository.existsByPhoneAndDeletedAtIsNull(normalizedPhone)) {
+        if (normalizedPhone != null && userRepository.existsByPhoneAndIsDeletedFalse(normalizedPhone)) {
             throw new BadRequestException("이미 등록된 휴대폰 번호입니다");
         }
 
@@ -451,8 +458,8 @@ public class UserService extends BaseService<User, Long> {
         if (request.getPhone() != null && !request.getPhone().isBlank()) {
             String normalizedPhone = normalizePhone(request.getPhone());
             // 다른 사용자가 사용 중인지 확인
-            if (normalizedPhone != null && userRepository.existsByPhoneAndDeletedAtIsNull(normalizedPhone)) {
-                User existingUser = userRepository.findByPhoneAndDeletedAtIsNull(normalizedPhone);
+            if (normalizedPhone != null && userRepository.existsByPhoneAndIsDeletedFalse(normalizedPhone)) {
+                User existingUser = userRepository.findByPhoneAndIsDeletedFalse(normalizedPhone);
                 if (existingUser != null && !existingUser.getId().equals(userId)) {
                     throw new BadRequestException("이미 사용 중인 휴대폰 번호입니다");
                 }
@@ -480,8 +487,8 @@ public class UserService extends BaseService<User, Long> {
 
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             // 다른 사용자가 사용 중인지 확인
-            if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail())) {
-                User existingUser = userRepository.findByEmailAndDeletedAtIsNull(request.getEmail())
+            if (userRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
+                User existingUser = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
                         .orElse(null);
                 if (existingUser != null && !existingUser.getId().equals(userId)) {
                     throw new BadRequestException("이미 사용 중인 이메일입니다");

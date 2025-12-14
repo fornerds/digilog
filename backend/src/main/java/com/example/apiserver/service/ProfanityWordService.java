@@ -32,7 +32,7 @@ public class ProfanityWordService extends BaseService<ProfanityWord, Long> {
 
     public Page<ProfanityWord> getWords(int page, int limit) {
         Pageable pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.ASC, "word"));
-        return profanityWordRepository.findAll(pageable);
+        return profanityWordRepository.findAllByIsDeletedFalse(pageable);
     }
 
     @Transactional
@@ -55,6 +55,29 @@ public class ProfanityWordService extends BaseService<ProfanityWord, Long> {
         profanityService.clearCache(); // 캐시 초기화
 
         return saved;
+    }
+
+    @Transactional
+    public ProfanityWord updateWord(Long id, String newWord) {
+        if (newWord == null || newWord.isBlank()) {
+            throw new BadRequestException("비속어 단어는 필수입니다");
+        }
+
+        ProfanityWord word = findById(id);
+
+        // 동일한 단어로 변경하는 경우는 허용
+        if (!word.getWord().equals(newWord)) {
+            // 중복 체크
+            List<String> existingWords = profanityWordRepository.findAllWords();
+            if (existingWords.contains(newWord)) {
+                throw new BadRequestException("이미 등록된 비속어 단어입니다");
+            }
+        }
+
+        word.updateWord(newWord);
+        profanityService.clearCache(); // 캐시 초기화
+
+        return word;
     }
 
     @Transactional

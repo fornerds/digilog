@@ -10,10 +10,10 @@ import java.util.Optional;
 @Repository
 public interface PostLikeRepository extends BaseRepository<PostLike, Long> {
     
-    @Query("SELECT pl FROM PostLike pl WHERE pl.post.id = :postId AND pl.user.id = :userId AND pl.deletedAt IS NULL")
+    @Query("SELECT pl FROM PostLike pl WHERE pl.post.id = :postId AND pl.user.id = :userId AND pl.isDeleted = false")
     Optional<PostLike> findByPostIdAndUserId(@Param("postId") Long postId, @Param("userId") Long userId);
 
-    @Query("SELECT COUNT(pl) FROM PostLike pl WHERE pl.post.id = :postId AND pl.deletedAt IS NULL")
+    @Query("SELECT COUNT(pl) FROM PostLike pl WHERE pl.post.id = :postId AND pl.isDeleted = false")
     long countByPostId(@Param("postId") Long postId);
 }
 

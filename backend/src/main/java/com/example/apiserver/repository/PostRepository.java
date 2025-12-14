@@ -10,34 +10,34 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PostRepository extends BaseRepository<Post, Long> {
     
-    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL " +
+    @Query("SELECT p FROM Post p WHERE p.isDeleted = false " +
            "AND (:search IS NULL OR :search = '' OR p.title LIKE %:search% OR p.content LIKE %:search%) " +
            "ORDER BY p.createdAt DESC")
     Page<Post> findAllWithSearch(@Param("search") String search, Pageable pageable);
 
-    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL " +
+    @Query("SELECT p FROM Post p WHERE p.isDeleted = false " +
            "AND (:search IS NULL OR :search = '' OR p.title LIKE %:search% OR p.content LIKE %:search%) " +
            "ORDER BY p.updatedAt DESC")
     Page<Post> findAllWithSearchOrderByUpdatedAt(@Param("search") String search, Pageable pageable);
 
-    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL " +
+    @Query("SELECT p FROM Post p WHERE p.isDeleted = false " +
            "AND (:search IS NULL OR :search = '' OR p.title LIKE %:search% OR p.content LIKE %:search%) " +
            "ORDER BY p.title ASC")
     Page<Post> findAllWithSearchOrderByTitle(@Param("search") String search, Pageable pageable);
     
-    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL " +
+    @Query("SELECT p FROM Post p WHERE p.isDeleted = false " +
            "AND (:search IS NULL OR :search = '' OR p.title LIKE %:search% OR p.content LIKE %:search%) " +
            "AND (:authorId IS NULL OR p.author.id = :authorId) " +
            "ORDER BY p.createdAt DESC")
     Page<Post> findAllWithFilters(@Param("search") String search, @Param("authorId") Long authorId, Pageable pageable);
     
-    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL " +
+    @Query("SELECT p FROM Post p WHERE p.isDeleted = false " +
            "AND (:search IS NULL OR :search = '' OR p.title LIKE %:search% OR p.content LIKE %:search%) " +
            "AND (:authorId IS NULL OR p.author.id = :authorId) " +
            "ORDER BY p.updatedAt DESC")
     Page<Post> findAllWithFiltersOrderByUpdatedAt(@Param("search") String search, @Param("authorId") Long authorId, Pageable pageable);
     
-    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL " +
+    @Query("SELECT p FROM Post p WHERE p.isDeleted = false " +
            "AND (:search IS NULL OR :search = '' OR p.title LIKE %:search% OR p.content LIKE %:search%) " +
            "AND (:authorId IS NULL OR p.author.id = :authorId) " +
            "ORDER BY p.title ASC")

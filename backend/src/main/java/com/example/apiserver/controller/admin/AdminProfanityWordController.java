@@ -52,6 +52,17 @@ public class AdminProfanityWordController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
+    @Operation(summary = "비속어 단어 상세 조회", description = "관리자가 비속어 단어 상세 조회")
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<ProfanityWord>> getWord(
+            Authentication authentication,
+            @PathVariable Long id) {
+        AdminUtil.checkAdminRole(authentication);
+        
+        ProfanityWord word = profanityWordService.findById(id);
+        return ResponseEntity.ok(ApiResponse.success(word));
+    }
+
     @Operation(summary = "비속어 단어 생성", description = "관리자가 비속어 단어 생성")
     @PostMapping
     public ResponseEntity<ApiResponse<ProfanityWord>> createWord(
@@ -64,6 +75,20 @@ public class AdminProfanityWordController {
         
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(saved));
+    }
+
+    @Operation(summary = "비속어 단어 수정", description = "관리자가 비속어 단어 수정")
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<ProfanityWord>> updateWord(
+            Authentication authentication,
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+        AdminUtil.checkAdminRole(authentication);
+        
+        String word = request.get("word");
+        ProfanityWord updated = profanityWordService.updateWord(id, word);
+        
+        return ResponseEntity.ok(ApiResponse.success(updated));
     }
 
     @Operation(summary = "비속어 단어 삭제", description = "관리자가 비속어 단어 삭제")

@@ -24,12 +24,16 @@ public abstract class BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
     public void softDelete() {
         this.deletedAt = LocalDateTime.now();
+        this.isDeleted = true;
     }
 
     public boolean isDeleted() {
-        return this.deletedAt != null;
+        return Boolean.TRUE.equals(this.isDeleted);
     }
 }
 

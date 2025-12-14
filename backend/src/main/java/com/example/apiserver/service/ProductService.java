@@ -64,7 +64,7 @@ public class ProductService extends BaseService<Product, Long> {
     @Transactional
     public ProductResponse toggleWish(Long productId, Long userId, Boolean isWished) {
         Product product = findById(productId);
-        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다"));
 
         Optional<ProductWish> existingWish = productWishRepository.findByProductIdAndUserId(productId, userId);
@@ -142,7 +142,7 @@ public class ProductService extends BaseService<Product, Long> {
             throw new BadRequestException("피부코드 또는 퍼스널컬러 중 하나는 필수입니다");
         }
 
-        Image image = imageRepository.findByUrlAndDeletedAtIsNull(request.getImageUrl())
+        Image image = imageRepository.findByUrlAndIsDeletedFalse(request.getImageUrl())
                 .orElseThrow(() -> new ResourceNotFoundException("이미지를 찾을 수 없습니다"));
 
         String tagsJson = request.getTags() != null ? jsonConverter.toJson(request.getTags()) : null;
@@ -198,7 +198,7 @@ public class ProductService extends BaseService<Product, Long> {
             product.updatePrice(request.getPrice());
         }
         if (request.getImageUrl() != null) {
-            Image image = imageRepository.findByUrlAndDeletedAtIsNull(request.getImageUrl())
+            Image image = imageRepository.findByUrlAndIsDeletedFalse(request.getImageUrl())
                     .orElseThrow(() -> new ResourceNotFoundException("이미지를 찾을 수 없습니다"));
             product.updateImage(image);
         }

@@ -70,7 +70,7 @@ public class NoticeService extends BaseService<Notice, Long> {
         // 이미지 연결
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
             for (String imageUrl : request.getImageUrls()) {
-                Image image = imageRepository.findByUrlAndDeletedAtIsNull(imageUrl)
+                Image image = imageRepository.findByUrlAndIsDeletedFalse(imageUrl)
                         .orElse(null);
                 if (image != null) {
                     NoticeImage noticeImage = NoticeImage.builder()
@@ -115,7 +115,7 @@ public class NoticeService extends BaseService<Notice, Long> {
 
             // 새 이미지 연결
             for (String imageUrl : request.getImageUrls()) {
-                Image image = imageRepository.findByUrlAndDeletedAtIsNull(imageUrl)
+                Image image = imageRepository.findByUrlAndIsDeletedFalse(imageUrl)
                         .orElse(null);
                 if (image != null) {
                     NoticeImage noticeImage = NoticeImage.builder()
