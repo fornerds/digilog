@@ -149,8 +149,9 @@ public class SkinAnalysisReportService extends BaseService<SkinAnalysisReport, L
             report.updateCareTips(jsonConverter.toJson(request.getCareTips()));
         }
 
-        User user = report.getUser();
-        return SkinAnalysisReportResponse.from(report, user, jsonConverter);
+        SkinAnalysisReport savedReport = reportRepository.save(report);
+        User user = savedReport.getUser();
+        return SkinAnalysisReportResponse.from(savedReport, user, jsonConverter);
     }
 
     @Transactional

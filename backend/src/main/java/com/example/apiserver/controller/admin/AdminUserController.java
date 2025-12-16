@@ -4,14 +4,14 @@ import com.example.apiserver.dto.ApiResponse;
 import com.example.apiserver.dto.MessageResponse;
 import com.example.apiserver.dto.PaginatedResponse;
 import com.example.apiserver.dto.PaginationInfo;
+import com.example.apiserver.dto.TokenResponse;
 import com.example.apiserver.dto.user.UserRequest;
 import com.example.apiserver.dto.user.UserResponse;
 import com.example.apiserver.service.UserService;
 import com.example.apiserver.util.AdminUtil;
+import com.example.apiserver.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 // Swagger ApiResponse는 전체 경로로 사용
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -25,9 +25,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Slf4j
 @Tag(name = "관리자 - 사용자 관리", description = "관리자 사용자 관리 API")
 @RestController
@@ -37,8 +34,9 @@ import java.util.Map;
 public class AdminUserController {
 
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
-    @Operation(summary = "사용자 목록 조회", description = "전체 사용자 목록 조회")
+    @Operation(summary = "사용자 목록 조회", description = "관리자가 사용자 목록 조회")
     @ApiResponses(value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",
@@ -46,8 +44,7 @@ public class AdminUserController {
             content = @Content()
         ),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한이 없습니다",
-            content = @Content(
-                examples = @ExampleObject(value = "{\"success\": false, \"message\": \"관리자 권한이 필요합니다\", \"data\": null, \"timestamp\": \"2025-12-16T10:00:00\"}"))),
+            content = @Content()),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류",
             content = @Content())
     })
@@ -78,7 +75,7 @@ public class AdminUserController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "사용자 상세 조회", description = "특정 사용자 상세 정보 조회")
+    @Operation(summary = "사용자 상세 조회", description = "관리자가 사용자 상세 정보 조회")
     @ApiResponses(value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "200",
@@ -88,8 +85,7 @@ public class AdminUserController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한이 없습니다",
             content = @Content()),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다",
-            content = @Content(
-                examples = @ExampleObject(value = "{\"success\": false, \"message\": \"Resource not found\", \"data\": null, \"timestamp\": \"2025-12-16T10:00:00\"}"))),
+            content = @Content()),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류",
             content = @Content())
     })
@@ -99,7 +95,7 @@ public class AdminUserController {
             @PathVariable Long id) {
         AdminUtil.checkAdminRole(authentication);
         
-        UserResponse user = userService.getProfileForAdmin(id);  // 관리자용: id 포함
+        UserResponse user = userService.getProfileForAdmin(id);
         return ResponseEntity.ok(ApiResponse.success(user));
     }
 
@@ -107,10 +103,10 @@ public class AdminUserController {
     @ApiResponses(value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "201",
-            description = "사용자 생성 성공",
+            description = "생성 성공",
             content = @Content()
         ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 데이터 검증 실패 또는 중복된 이메일/휴대폰 번호",
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 데이터 검증 실패",
             content = @Content()),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한이 없습니다",
             content = @Content()),
@@ -134,7 +130,7 @@ public class AdminUserController {
             description = "수정 성공",
             content = @Content()
         ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 데이터 검증 실패 또는 중복된 이메일/휴대폰 번호",
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 데이터 검증 실패",
             content = @Content()),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한이 없습니다",
             content = @Content()),
@@ -179,6 +175,42 @@ public class AdminUserController {
         MessageResponse messageResponse = MessageResponse.builder()
                 .message("사용자가 삭제되었습니다.")
                 .build();
-        return ResponseEntity.ok(ApiResponse.success("사용자가 삭제되었습니다.", messageResponse));
+        
+        return ResponseEntity.ok(ApiResponse.success(messageResponse));
+    }
+
+    @Operation(summary = "테스트용 토큰 생성", description = "관리자가 특정 사용자 ID로 테스트용 JWT 토큰 생성 (테스트 전용)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "토큰 생성 성공",
+            content = @Content()
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한이 없습니다",
+            content = @Content()),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다",
+            content = @Content()),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content())
+    })
+    @PostMapping("/{id}/test-token")
+    public ResponseEntity<ApiResponse<TokenResponse>> generateTestToken(
+            Authentication authentication,
+            @PathVariable Long id) {
+        AdminUtil.checkAdminRole(authentication);
+        
+        UserResponse user = userService.getProfileForAdmin(id);
+        // UserResponse에서 id, email, role 가져오기
+        Long userId = user.getId();
+        String email = user.getEmail() != null && !user.getEmail().isEmpty() ? user.getEmail() : "";
+        String role = user.getRole() != null ? user.getRole().name() : "USER";
+        
+        String token = jwtUtil.generateToken(userId, email, role);
+        
+        TokenResponse tokenResponse = TokenResponse.builder()
+                .token(token)
+                .build();
+        
+        return ResponseEntity.ok(ApiResponse.success(tokenResponse));
     }
 }

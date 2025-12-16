@@ -13,6 +13,7 @@ import com.example.apiserver.exception.ResourceNotFoundException;
 import com.example.apiserver.repository.BaseRepository;
 import com.example.apiserver.repository.ImageRepository;
 import com.example.apiserver.repository.PersonalColorColorRepository;
+import com.example.apiserver.repository.PersonalColorDiagnosisColorRepository;
 import com.example.apiserver.repository.PersonalColorDiagnosisRepository;
 import com.example.apiserver.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
 
     private final PersonalColorDiagnosisRepository diagnosisRepository;
     private final PersonalColorColorRepository colorRepository;
+    private final PersonalColorDiagnosisColorRepository diagnosisColorRepository;
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
     private final JsonConverter jsonConverter;
@@ -138,11 +140,12 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
             color.updateCategory(request.getCategory());
         }
         
+        PersonalColorColor savedColor = colorRepository.save(color);
         return PersonalColorColorResponse.builder()
-                .id(color.getId())
-                .name(color.getName())
-                .hexCode(color.getHexCode())
-                .category(color.getCategory())
+                .id(savedColor.getId())
+                .name(savedColor.getName())
+                .hexCode(savedColor.getHexCode())
+                .category(savedColor.getCategory())
                 .build();
     }
 
@@ -233,6 +236,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
                     .color(color)
                     .type("matching")
                     .build();
+            diagnosisColorRepository.save(diagnosisColor);
             savedDiagnosis.getDiagnosisColors().add(diagnosisColor);
         }
 
@@ -245,20 +249,24 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
                     .color(color)
                     .type("nonMatching")
                     .build();
+            diagnosisColorRepository.save(diagnosisColor);
             savedDiagnosis.getDiagnosisColors().add(diagnosisColor);
         }
 
-        List<PersonalColorColor> matchingColors = savedDiagnosis.getDiagnosisColors().stream()
+        // 최종 저장 (관계는 이미 저장됨)
+        PersonalColorDiagnosis finalDiagnosis = diagnosisRepository.save(savedDiagnosis);
+
+        List<PersonalColorColor> matchingColors = finalDiagnosis.getDiagnosisColors().stream()
                 .filter(dc -> "matching".equals(dc.getType()) && !dc.isDeleted())
                 .map(PersonalColorDiagnosisColor::getColor)
                 .collect(Collectors.toList());
         
-        List<PersonalColorColor> nonMatchingColors = savedDiagnosis.getDiagnosisColors().stream()
+        List<PersonalColorColor> nonMatchingColors = finalDiagnosis.getDiagnosisColors().stream()
                 .filter(dc -> "nonMatching".equals(dc.getType()) && !dc.isDeleted())
                 .map(PersonalColorDiagnosisColor::getColor)
                 .collect(Collectors.toList());
 
-        return PersonalColorResponse.from(savedDiagnosis, matchingColors, nonMatchingColors, jsonConverter);
+        return PersonalColorResponse.from(finalDiagnosis, matchingColors, nonMatchingColors, jsonConverter);
     }
 
     @Transactional
@@ -286,8 +294,13 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
                     request.getMatchingColors().getTitle(),
                     request.getMatchingColors().getDescription()
             );
-            // 기존 색상 관계 삭제
-            diagnosis.getDiagnosisColors().removeIf(dc -> "matching".equals(dc.getType()));
+            // 기존 색상 관계 소프트 삭제
+            diagnosis.getDiagnosisColors().stream()
+                    .filter(dc -> "matching".equals(dc.getType()) && !dc.isDeleted())
+                    .forEach(dc -> {
+                        dc.softDelete();
+                        diagnosisColorRepository.save(dc);
+                    });
             // 새 색상 연결
             if (request.getMatchingColors().getColorIds() != null) {
                 for (Long colorId : request.getMatchingColors().getColorIds()) {
@@ -298,6 +311,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
                             .color(color)
                             .type("matching")
                             .build();
+                    diagnosisColorRepository.save(diagnosisColor);
                     diagnosis.getDiagnosisColors().add(diagnosisColor);
                 }
             }
@@ -307,8 +321,13 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
                     request.getNonMatchingColors().getTitle(),
                     request.getNonMatchingColors().getDescription()
             );
-            // 기존 색상 관계 삭제
-            diagnosis.getDiagnosisColors().removeIf(dc -> "nonMatching".equals(dc.getType()));
+            // 기존 색상 관계 소프트 삭제
+            diagnosis.getDiagnosisColors().stream()
+                    .filter(dc -> "nonMatching".equals(dc.getType()) && !dc.isDeleted())
+                    .forEach(dc -> {
+                        dc.softDelete();
+                        diagnosisColorRepository.save(dc);
+                    });
             // 새 색상 연결
             if (request.getNonMatchingColors().getColorIds() != null) {
                 for (Long colorId : request.getNonMatchingColors().getColorIds()) {
@@ -319,6 +338,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
                             .color(color)
                             .type("nonMatching")
                             .build();
+                    diagnosisColorRepository.save(diagnosisColor);
                     diagnosis.getDiagnosisColors().add(diagnosisColor);
                 }
             }
@@ -336,17 +356,20 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
             diagnosis.updateMakeupTips(jsonConverter.toJson(request.getMakeupTips()));
         }
 
-        List<PersonalColorColor> matchingColors = diagnosis.getDiagnosisColors().stream()
+        // 색상 관계 변경사항 저장
+        PersonalColorDiagnosis savedDiagnosis = diagnosisRepository.save(diagnosis);
+
+        List<PersonalColorColor> matchingColors = savedDiagnosis.getDiagnosisColors().stream()
                 .filter(dc -> "matching".equals(dc.getType()) && !dc.isDeleted())
                 .map(PersonalColorDiagnosisColor::getColor)
                 .collect(Collectors.toList());
         
-        List<PersonalColorColor> nonMatchingColors = diagnosis.getDiagnosisColors().stream()
+        List<PersonalColorColor> nonMatchingColors = savedDiagnosis.getDiagnosisColors().stream()
                 .filter(dc -> "nonMatching".equals(dc.getType()) && !dc.isDeleted())
                 .map(PersonalColorDiagnosisColor::getColor)
                 .collect(Collectors.toList());
 
-        return PersonalColorResponse.from(diagnosis, matchingColors, nonMatchingColors, jsonConverter);
+        return PersonalColorResponse.from(savedDiagnosis, matchingColors, nonMatchingColors, jsonConverter);
     }
 
     @Transactional

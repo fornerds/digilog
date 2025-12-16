@@ -243,7 +243,9 @@ public class ProductService extends BaseService<Product, Long> {
             }
         }
 
-        return ProductResponse.from(product, false, jsonConverter);
+        // 변경사항 저장
+        Product savedProduct = productRepository.save(product);
+        return ProductResponse.from(savedProduct, false, jsonConverter);
     }
 
     @Transactional

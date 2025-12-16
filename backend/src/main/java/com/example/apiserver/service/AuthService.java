@@ -191,9 +191,43 @@ public class AuthService {
         // DB에서 refresh token 삭제
         User user = userService.findById(userId);
         refreshTokenRepository.findByUserAndIsDeletedFalse(user)
-                .ifPresent(RefreshToken::softDelete);
+                .ifPresent(token -> {
+                    token.softDelete();
+                    refreshTokenRepository.save(token);
+                });
 
         // Cookie 삭제
+        cookieUtil.deleteRefreshTokenCookie(response);
+    }
+    
+    @Transactional
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        String refreshTokenValue = extractRefreshTokenFromRequest(request);
+        
+        if (refreshTokenValue != null && !refreshTokenValue.isEmpty()) {
+            try {
+                // Refresh token 검증
+                if (jwtUtil.validateToken(refreshTokenValue) && jwtUtil.isRefreshToken(refreshTokenValue)) {
+                    Long userId = jwtUtil.extractUserId(refreshTokenValue);
+                    if (userId != null) {
+                        // DB에서 refresh token 찾아서 삭제
+                        User user = userRepository.findById(userId).orElse(null);
+                        if (user != null) {
+                            refreshTokenRepository.findByUserAndIsDeletedFalse(user)
+                                    .ifPresent(token -> {
+                                        token.softDelete();
+                                        refreshTokenRepository.save(token);
+                                    });
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // 토큰 검증 실패 시 무시하고 쿠키만 삭제
+                log.debug("로그아웃 시 refresh token 검증 실패 (무시): {}", e.getMessage());
+            }
+        }
+        
+        // 쿠키 삭제
         cookieUtil.deleteRefreshTokenCookie(response);
     }
 

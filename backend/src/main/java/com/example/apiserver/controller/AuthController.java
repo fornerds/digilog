@@ -2,6 +2,7 @@ package com.example.apiserver.controller;
 
 import com.example.apiserver.dto.ApiResponse;
 import com.example.apiserver.dto.EmailCheckResponse;
+import com.example.apiserver.dto.MessageResponse;
 import com.example.apiserver.dto.TokenResponse;
 import com.example.apiserver.dto.user.LoginResponse;
 import com.example.apiserver.dto.user.SocialLoginResponse;
@@ -12,9 +13,9 @@ import com.example.apiserver.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @Tag(name = "인증", description = "회원가입, 로그인, 소셜 로그인 API")
@@ -198,6 +196,29 @@ public class AuthController {
                 .build();
 
         return ResponseEntity.ok(ApiResponse.success(socialLoginResponse));
+    }
+
+    @Operation(summary = "로그아웃", description = "사용자 로그아웃 (Refresh Token 쿠키 삭제)")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "로그아웃 성공",
+            content = @Content()
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content())
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<MessageResponse>> logout(
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        authService.logout(request, response);
+        
+        MessageResponse messageResponse = MessageResponse.builder()
+                .message("로그아웃되었습니다.")
+                .build();
+        
+        return ResponseEntity.ok(ApiResponse.success(messageResponse));
     }
 }
 

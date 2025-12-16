@@ -1,6 +1,8 @@
 package com.example.apiserver.security;
 
 import com.example.apiserver.config.CorsProperties;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,13 +10,19 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -62,11 +70,55 @@ public class SecurityConfig {
                 .requestMatchers(ADMIN_PATHS).hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(authenticationEntryPoint())
+                .accessDeniedHandler(accessDeniedHandler())
+            )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             // Swagger UI 정적 리소스 허용
             .headers(headers -> headers.frameOptions().sameOrigin());
         
         return http.build();
+    }
+
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        return new AuthenticationEntryPoint() {
+            @Override
+            public void commence(HttpServletRequest request, HttpServletResponse response,
+                               AuthenticationException authException) throws IOException {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
+                String timestamp = now.toString();
+                String jsonResponse = String.format(
+                    "{\"success\":false,\"message\":\"인증이 필요합니다\",\"data\":null,\"timestamp\":\"%s\"}",
+                    timestamp
+                );
+                response.getWriter().write(jsonResponse);
+            }
+        };
+    }
+
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return new AccessDeniedHandler() {
+            @Override
+            public void handle(HttpServletRequest request, HttpServletResponse response,
+                             AccessDeniedException accessDeniedException) throws IOException {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json;charset=UTF-8");
+                
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
+                String timestamp = now.toString();
+                String jsonResponse = String.format(
+                    "{\"success\":false,\"message\":\"권한이 없습니다\",\"data\":null,\"timestamp\":\"%s\"}",
+                    timestamp
+                );
+                response.getWriter().write(jsonResponse);
+            }
+        };
     }
     
     @Bean
