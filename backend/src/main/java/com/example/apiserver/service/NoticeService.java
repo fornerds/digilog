@@ -134,6 +134,7 @@ public class NoticeService extends BaseService<Notice, Long> {
     public void deleteNotice(Long noticeId) {
         Notice notice = findById(noticeId);
         notice.softDelete();
+        noticeRepository.save(notice); // soft delete 후 저장
     }
 
     private List<String> getNoticeImageUrls(Long noticeId) {

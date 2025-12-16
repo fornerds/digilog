@@ -84,6 +84,7 @@ public class ProfanityWordService extends BaseService<ProfanityWord, Long> {
     public void deleteWord(Long id) {
         ProfanityWord word = findById(id);
         word.softDelete();
+        profanityWordRepository.save(word); // soft delete 후 저장
         profanityService.clearCache(); // 캐시 초기화
     }
 

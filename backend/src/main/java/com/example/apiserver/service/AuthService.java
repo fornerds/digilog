@@ -42,7 +42,10 @@ public class AuthService {
 
         // 기존 refresh token 삭제 (한 사용자당 하나의 refresh token만 유지)
         refreshTokenRepository.findByUserAndIsDeletedFalse(user)
-                .ifPresent(existingToken -> existingToken.softDelete());
+                .ifPresent(existingToken -> {
+                    existingToken.softDelete();
+                    refreshTokenRepository.save(existingToken); // soft delete 후 저장
+                });
 
         // DB에 refresh token 저장
         RefreshToken refreshTokenEntity = RefreshToken.builder()
@@ -74,7 +77,10 @@ public class AuthService {
 
         // 기존 refresh token 삭제 (한 사용자당 하나의 refresh token만 유지)
         refreshTokenRepository.findByUserAndIsDeletedFalse(user)
-                .ifPresent(existingToken -> existingToken.softDelete());
+                .ifPresent(existingToken -> {
+                    existingToken.softDelete();
+                    refreshTokenRepository.save(existingToken); // soft delete 후 저장
+                });
 
         // DB에 refresh token 저장
         RefreshToken refreshTokenEntity = RefreshToken.builder()
@@ -133,6 +139,7 @@ public class AuthService {
         if (user.isDeleted()) {
             // 사용자가 삭제된 경우 refresh token도 삭제
             refreshTokenEntity.softDelete();
+            refreshTokenRepository.save(refreshTokenEntity); // soft delete 후 저장
             throw new UnauthorizedException("사용자를 찾을 수 없습니다");
         }
 
@@ -142,6 +149,7 @@ public class AuthService {
 
         // 기존 refresh token 삭제하고 새로 저장
         refreshTokenEntity.softDelete();
+        refreshTokenRepository.save(refreshTokenEntity); // soft delete 후 저장
         RefreshToken newRefreshTokenEntity = RefreshToken.builder()
                 .token(newRefreshToken)
                 .user(user)

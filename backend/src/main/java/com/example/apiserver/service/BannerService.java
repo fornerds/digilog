@@ -85,6 +85,7 @@ public class BannerService extends BaseService<Banner, Long> {
         
         // 배너 소프트 삭제
         banner.softDelete();
+        bannerRepository.save(banner); // soft delete 후 저장
         
         // TODO: 이미지 삭제 정책 결정 필요
         // 현재는 즉시 삭제하지 않음 (다른 곳에서 사용할 수 있으므로)

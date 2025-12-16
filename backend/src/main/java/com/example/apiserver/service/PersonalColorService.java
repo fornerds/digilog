@@ -162,6 +162,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
         }
         
         color.softDelete();
+        colorRepository.save(color); // soft delete 후 저장
     }
 
     public Page<PersonalColorResponse> getDiagnosesForAdmin(int page, int limit, String search, Long userId, String sortBy, String order) {
@@ -353,6 +354,7 @@ public class PersonalColorService extends BaseService<PersonalColorDiagnosis, Lo
         PersonalColorDiagnosis diagnosis = findById(diagnosisId);
         
         diagnosis.softDelete();
+        diagnosisRepository.save(diagnosis); // soft delete 후 저장
         
         // TODO: 이미지 삭제 정책 결정 필요
         // 컨투어링 가이드 이미지 삭제는 정책 결정 후 구현

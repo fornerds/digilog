@@ -334,10 +334,14 @@ public class UserService extends BaseService<User, Long> {
 
         // Refresh token 삭제
         refreshTokenRepository.findByUserAndIsDeletedFalse(user)
-                .ifPresent(RefreshToken::softDelete);
+                .ifPresent(existingToken -> {
+                    existingToken.softDelete();
+                    refreshTokenRepository.save(existingToken); // soft delete 후 저장
+                });
 
         // 소프트 삭제
         user.softDelete();
+        userRepository.save(user); // soft delete 후 저장
     }
 
     @Transactional
@@ -511,6 +515,7 @@ public class UserService extends BaseService<User, Long> {
         
         // 소프트 삭제
         user.softDelete();
+        userRepository.save(user); // soft delete 후 저장
     }
 
     private Pageable createPageable(int page, int limit, String sortBy, String order) {

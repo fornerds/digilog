@@ -87,7 +87,10 @@ public class ProductService extends BaseService<Product, Long> {
             }
         } else {
             // 찜 취소
-            existingWish.ifPresent(wish -> wish.softDelete());
+            existingWish.ifPresent(wish -> {
+                wish.softDelete();
+                productWishRepository.save(wish); // soft delete 후 저장
+            });
         }
 
         Boolean currentWishStatus = checkWishStatus(productId, userId);
@@ -248,9 +251,13 @@ public class ProductService extends BaseService<Product, Long> {
         Product product = findById(productId);
         
         // 관련 찜 목록에서도 제거 (소프트 삭제)
-        product.getProductWishes().forEach(ProductWish::softDelete);
+        product.getProductWishes().forEach(wish -> {
+            wish.softDelete();
+            productWishRepository.save(wish); // soft delete 후 저장
+        });
         
         product.softDelete();
+        productRepository.save(product); // soft delete 후 저장
     }
 
     private Pageable createPageable(int page, int limit, String sortBy, String order) {

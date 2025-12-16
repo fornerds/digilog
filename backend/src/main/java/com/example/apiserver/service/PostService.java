@@ -273,6 +273,7 @@ public class PostService extends BaseService<Post, Long> {
 
         // 게시글 소프트 삭제
         post.softDelete();
+        postRepository.save(post); // soft delete 후 저장
 
         // TODO: 이미지 삭제 정책 결정 필요
         // 현재는 IMMEDIATE_DELETE 정책 사용 (즉시 삭제)
@@ -407,6 +408,7 @@ public class PostService extends BaseService<Post, Long> {
         
         // 게시글 소프트 삭제
         post.softDelete();
+        postRepository.save(post); // soft delete 후 저장
         
         // 관련 댓글도 함께 삭제
         List<Comment> comments = commentRepository.findByPostIdAndIsDeletedFalse(postId);

@@ -157,6 +157,7 @@ public class SkinAnalysisReportService extends BaseService<SkinAnalysisReport, L
     public void deleteReportForAdmin(Long reportId) {
         SkinAnalysisReport report = findById(reportId);
         report.softDelete();
+        reportRepository.save(report); // soft delete 후 저장
     }
 }
 
