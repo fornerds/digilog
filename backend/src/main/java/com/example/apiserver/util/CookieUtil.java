@@ -1,9 +1,12 @@
 package com.example.apiserver.util;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
+
+import java.time.Duration;
 
 @Component
 public class CookieUtil {
@@ -14,64 +17,84 @@ public class CookieUtil {
     @Value("${server.servlet.session.cookie.same-site:lax}")
     private String cookieSameSite;
     
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
+    
     /**
-     * HttpOnly, Secure 설정이 적용된 Cookie를 설정합니다.
-     * SameSite 설정은 Response Header에 직접 추가합니다.
+     * RefreshToken 쿠키를 설정합니다.
+     * 프로덕션과 개발 환경에 따라 다르게 설정됩니다.
      */
-    public void setCookie(HttpServletResponse response, String name, String value, int maxAge) {
-        // 기본 Cookie 설정
-        Cookie cookie = new Cookie(name, value);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieSecure);
-        cookie.setPath("/api");
-        cookie.setMaxAge(maxAge);
-        response.addCookie(cookie);
+    public void setRefreshTokenCookie(HttpServletResponse response, String token, int maxAgeSeconds) {
+        boolean isProduction = "prod".equals(activeProfile) || "production".equals(activeProfile);
         
-        // SameSite 설정을 위해 Response Header에 직접 추가
-        // (Servlet API의 Cookie는 SameSite를 직접 지원하지 않음)
-        String sameSiteValue = "Lax";
-        if ("none".equalsIgnoreCase(cookieSameSite)) {
-            sameSiteValue = "None";
-        } else if ("strict".equalsIgnoreCase(cookieSameSite)) {
-            sameSiteValue = "Strict";
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("refreshToken", token)
+                .httpOnly(true)
+                .path("/api")  // /api 하위 모든 경로에서 쿠키 접근 가능
+                .maxAge(Duration.ofSeconds(maxAgeSeconds));
+        
+        if (isProduction) {
+            // 프로덕션 환경
+            cookieBuilder
+                    .secure(true)
+                    .sameSite("Strict");
+            // domain은 필요시 설정
+            // .domain("yourdomain.com")
+        } else {
+            // 개발 환경
+            cookieBuilder
+                    .secure(false)
+                    .sameSite("Lax");
         }
         
-        // Set-Cookie 헤더에 SameSite 추가
-        String cookieHeader = String.format("%s=%s; Path=/api; HttpOnly; Max-Age=%d; SameSite=%s",
-                name, value, maxAge, sameSiteValue);
-        if (cookieSecure) {
-            cookieHeader += "; Secure";
-        }
-        
-        response.addHeader("Set-Cookie", cookieHeader);
+        ResponseCookie cookie = cookieBuilder.build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
     
     /**
-     * Cookie를 삭제합니다.
+     * RefreshToken 쿠키를 삭제합니다.
      */
+    public void deleteRefreshTokenCookie(HttpServletResponse response) {
+        boolean isProduction = "prod".equals(activeProfile) || "production".equals(activeProfile);
+        
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .path("/api")  // /api 하위 모든 경로에서 쿠키 접근 가능
+                .maxAge(Duration.ofSeconds(0));
+        
+        if (isProduction) {
+            cookieBuilder
+                    .secure(true)
+                    .sameSite("Strict");
+        } else {
+            cookieBuilder
+                    .secure(false)
+                    .sameSite("Lax");
+        }
+        
+        ResponseCookie cookie = cookieBuilder.build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+    
+    /**
+     * @deprecated refreshToken만 사용하도록 변경되었습니다. setRefreshTokenCookie를 사용하세요.
+     */
+    @Deprecated
+    public void setCookie(HttpServletResponse response, String name, String value, int maxAge) {
+        // 하위 호환성을 위해 유지하지만 사용하지 않음
+        if ("refreshToken".equals(name)) {
+            setRefreshTokenCookie(response, value, maxAge);
+        }
+    }
+    
+    /**
+     * @deprecated refreshToken만 사용하도록 변경되었습니다. deleteRefreshTokenCookie를 사용하세요.
+     */
+    @Deprecated
     public void deleteCookie(HttpServletResponse response, String name) {
-        Cookie cookie = new Cookie(name, null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieSecure);
-        cookie.setPath("/api");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
-        
-        // SameSite 설정 포함하여 삭제
-        String sameSiteValue = "Lax";
-        if ("none".equalsIgnoreCase(cookieSameSite)) {
-            sameSiteValue = "None";
-        } else if ("strict".equalsIgnoreCase(cookieSameSite)) {
-            sameSiteValue = "Strict";
+        // 하위 호환성을 위해 유지하지만 사용하지 않음
+        if ("refreshToken".equals(name)) {
+            deleteRefreshTokenCookie(response);
         }
-        
-        String cookieHeader = String.format("%s=; Path=/api; HttpOnly; Max-Age=0; SameSite=%s",
-                name, sameSiteValue);
-        if (cookieSecure) {
-            cookieHeader += "; Secure";
-        }
-        
-        response.addHeader("Set-Cookie", cookieHeader);
     }
 }
 

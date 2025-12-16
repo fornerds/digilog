@@ -63,7 +63,7 @@ public class AdminUserController {
             @PathVariable Long id) {
         AdminUtil.checkAdminRole(authentication);
         
-        UserResponse user = userService.getProfile(id);
+        UserResponse user = userService.getProfileForAdmin(id);  // 관리자용: id 포함
         return ResponseEntity.ok(ApiResponse.success(user));
     }
 

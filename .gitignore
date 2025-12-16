@@ -34,3 +34,5 @@ backend/bin/
 !frontend/**/*.md
 !backend/**/*.md
 !docker/**/*.md
+
+oauth-test/

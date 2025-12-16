@@ -2,6 +2,7 @@ package com.example.apiserver.service;
 
 import com.example.apiserver.dto.user.UserRequest;
 import com.example.apiserver.dto.user.UserResponse;
+import com.example.apiserver.entity.Provider;
 import com.example.apiserver.entity.RefreshToken;
 import com.example.apiserver.entity.User;
 import com.example.apiserver.exception.BadRequestException;
@@ -29,6 +30,7 @@ public class AuthService {
 
     private final UserService userService;
     private final UserRepository userRepository;
+    private final SocialLoginService socialLoginService;
     private final JwtUtil jwtUtil;
     private final CookieUtil cookieUtil;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -54,23 +56,57 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(refreshTokenEntity);
 
-        // Cookie에 토큰 저장
-        cookieUtil.setCookie(response, "accessToken", accessToken, (int) (jwtUtil.getExpiration() / 1000));
-        cookieUtil.setCookie(response, "refreshToken", refreshToken, (int) (jwtUtil.getRefreshExpiration() / 1000));
+        // Cookie에 refreshToken만 저장 (accessToken은 응답 body에 포함)
+        cookieUtil.setRefreshTokenCookie(response, refreshToken, (int) (jwtUtil.getRefreshExpiration() / 1000));
 
         Map<String, Object> userData = new HashMap<>();
-        userData.put("id", user.getId());
+        // 보안상 id 제외
         userData.put("email", user.getEmail());
         userData.put("name", user.getName());
 
         return new LoginResult(accessToken, userData);
     }
 
+    /**
+     * OAuth 콜백 처리: 인증 코드를 받아서 로그인 처리
+     */
+    @Transactional
+    public SocialLoginResult oauthCallback(UserRequest.OAuthCallback request, HttpServletResponse response) {
+        // Provider 파싱
+        Provider provider;
+        try {
+            provider = Provider.valueOf(request.getProvider().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("지원하지 않는 소셜 로그인 제공자입니다");
+        }
+
+        if (provider == Provider.LOCAL) {
+            throw new BadRequestException("일반 로그인은 /auth/login을 사용하세요");
+        }
+
+        // 인증 코드를 액세스 토큰으로 교환
+        String accessToken;
+        try {
+            accessToken = socialLoginService.exchangeCodeForToken(provider, request.getCode(), request.getState());
+        } catch (Exception e) {
+            log.error("OAuth 토큰 교환 실패: provider={}, error={}", provider, e.getMessage());
+            throw new UnauthorizedException("OAuth 토큰 교환 실패: " + e.getMessage());
+        }
+
+        // 액세스 토큰으로 사용자 정보 가져오기 및 로그인 처리
+        UserRequest.SocialLogin socialLoginRequest = new UserRequest.SocialLogin();
+        socialLoginRequest.setProvider(request.getProvider());
+        socialLoginRequest.setAccessToken(accessToken);
+
+        return socialLogin(socialLoginRequest, response);
+    }
+
     @Transactional
     public SocialLoginResult socialLogin(UserRequest.SocialLogin request, HttpServletResponse response) {
         UserService.SocialLoginResult result = userService.socialLogin(request);
         UserResponse userResponse = result.getUserResponse();
-        User user = userService.findById(userResponse.getId());
+        // userService.socialLogin()에서 이미 찾거나 생성한 User 엔티티 사용
+        User user = result.getUser();
 
         String accessToken = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole().name());
         String refreshToken = jwtUtil.generateRefreshToken(user.getId());
@@ -89,12 +125,11 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(refreshTokenEntity);
 
-        // Cookie에 토큰 저장
-        cookieUtil.setCookie(response, "accessToken", accessToken, (int) (jwtUtil.getExpiration() / 1000));
-        cookieUtil.setCookie(response, "refreshToken", refreshToken, (int) (jwtUtil.getRefreshExpiration() / 1000));
+        // Cookie에 refreshToken만 저장 (accessToken은 응답 body에 포함)
+        cookieUtil.setRefreshTokenCookie(response, refreshToken, (int) (jwtUtil.getRefreshExpiration() / 1000));
 
         Map<String, Object> userData = new HashMap<>();
-        userData.put("id", userResponse.getId());
+        // 보안상 id 제외
         userData.put("email", userResponse.getEmail());
         userData.put("name", userResponse.getName());
         userData.put("provider", userResponse.getProvider());
@@ -156,9 +191,8 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(newRefreshTokenEntity);
 
-        // Cookie에 새 토큰 저장
-        cookieUtil.setCookie(response, "accessToken", newAccessToken, (int) (jwtUtil.getExpiration() / 1000));
-        cookieUtil.setCookie(response, "refreshToken", newRefreshToken, (int) (jwtUtil.getRefreshExpiration() / 1000));
+        // Cookie에 새 refreshToken 저장 (accessToken은 응답 body에 포함)
+        cookieUtil.setRefreshTokenCookie(response, newRefreshToken, (int) (jwtUtil.getRefreshExpiration() / 1000));
 
         return newAccessToken;
     }
@@ -171,8 +205,7 @@ public class AuthService {
                 .ifPresent(RefreshToken::softDelete);
 
         // Cookie 삭제
-        cookieUtil.deleteCookie(response, "accessToken");
-        cookieUtil.deleteCookie(response, "refreshToken");
+        cookieUtil.deleteRefreshTokenCookie(response);
     }
 
     @Transactional(readOnly = true)

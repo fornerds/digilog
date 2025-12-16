@@ -91,5 +91,20 @@ public class AuthController {
 
         return ResponseEntity.ok(ApiResponse.success(data));
     }
+
+    @Operation(summary = "OAuth 콜백", description = "네이버/카카오 OAuth 인증 코드를 받아서 로그인 처리")
+    @PostMapping("/oauth/callback")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> oauthCallback(
+            @Valid @RequestBody UserRequest.OAuthCallback request,
+            HttpServletResponse response) {
+        AuthService.SocialLoginResult result = authService.oauthCallback(request, response);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("token", result.getAccessToken());
+        data.put("user", result.getUser());
+        data.put("isNewUser", result.isNewUser());
+
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
 }
 

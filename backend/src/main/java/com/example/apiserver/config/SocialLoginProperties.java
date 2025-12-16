@@ -19,6 +19,8 @@ public class SocialLoginProperties {
         private String clientId = "${NAVER_CLIENT_ID:}";
         private String clientSecret = "${NAVER_CLIENT_SECRET:}";
         private String apiUrl = "https://openapi.naver.com/v1/nid/me";
+        private String tokenUrl = "https://nid.naver.com/oauth2.0/token";
+        private String redirectUri = "${NAVER_REDIRECT_URI:http://localhost:3000/auth/naver/callback}";
     }
 
     @Getter
@@ -27,6 +29,8 @@ public class SocialLoginProperties {
         private String clientId = "${KAKAO_CLIENT_ID:}";
         private String clientSecret = "${KAKAO_CLIENT_SECRET:}";
         private String apiUrl = "https://kapi.kakao.com/v2/user/me";
+        private String tokenUrl = "https://kauth.kakao.com/oauth/token";
+        private String redirectUri = "${KAKAO_REDIRECT_URI:http://localhost:3000/auth/kakao/callback}";
     }
 }
 

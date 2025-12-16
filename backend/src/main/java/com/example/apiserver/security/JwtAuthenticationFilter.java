@@ -36,7 +36,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String email = jwtUtil.extractEmail(token);
                 String role = jwtUtil.extractRole(token);
                 
-                if (userId != null && email != null) {
+                // 보안: userId, email(빈 문자열 허용), role이 필수 (토큰 서명 검증은 이미 validateToken에서 완료)
+                if (userId != null && email != null && role != null && !role.isBlank()) {
                     UsernamePasswordAuthenticationToken authentication = 
                         new UsernamePasswordAuthenticationToken(
                             userId,
@@ -45,6 +46,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         );
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    log.warn("JWT 토큰에 필수 정보가 없습니다: userId={}, email={}, role={}", userId, email, role);
                 }
             } catch (Exception e) {
                 log.error("JWT 인증 처리 중 오류 발생", e);

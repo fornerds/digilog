@@ -28,7 +28,8 @@ public class JwtUtil {
     public String generateToken(Long userId, String email, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
-        claims.put("email", email);
+        // email이 null이어도 빈 문자열로 저장 (보안을 위해 항상 포함)
+        claims.put("email", email != null ? email : "");
         claims.put("role", role);
         return createToken(claims, jwtProperties.getExpiration());
     }

@@ -24,16 +24,15 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorsProperties corsProperties;
     
-    // 인증이 필요 없는 경로들 (조회용)
-    // 주의: 게시글/댓글 작성/수정/삭제는 컨트롤러에서 @PreAuthorize로 추가 인증 필요
+    // 인증이 필요 없는 경로들 (auth만 허용)
     private static final String[] PUBLIC_PATHS = {
         "/v1/auth/**",                    // 인증 관련 (회원가입, 로그인)
-        "/v1/notices/**",                 // 공지/이벤트 조회
-        "/v1/banners/**",                 // 배너 조회
-        "/v1/posts/**",                   // 게시글 조회 (작성/수정/삭제는 인증 필요)
-        "/v1/skin-analysis-reports/**",   // 피부분석 보고서 조회
-        "/v1/personal-colors/**",         // 퍼스널컬러 조회
-        "/v1/products/**",                // 제품 조회
+        // "/v1/notices/**",                 // 공지/이벤트 조회
+        // "/v1/banners/**",                 // 배너 조회
+        // "/v1/posts/**",                   // 게시글 조회 (작성/수정/삭제는 인증 필요)
+        // "/v1/skin-analysis-reports/**",   // 피부분석 보고서 조회
+        // "/v1/personal-colors/**",         // 퍼스널컬러 조회
+        // "/v1/products/**",                // 제품 조회
         "/swagger-ui/**",                 // Swagger UI
         "/swagger-ui.html",               // Swagger UI
         "/swagger-ui/index.html",         // Swagger UI
@@ -73,9 +72,17 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
-        configuration.setAllowedMethods(corsProperties.getAllowedMethods());
-        configuration.setAllowedHeaders(corsProperties.getAllowedHeaders());
+        // allowCredentials가 true일 때는 setAllowedOriginPatterns 사용 (Spring Boot 2.4+)
+        // setAllowedOrigins는 allowCredentials와 함께 사용 시 제한이 있음
+        if (corsProperties.getAllowedOrigins() != null && !corsProperties.getAllowedOrigins().isEmpty()) {
+            configuration.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());
+        }
+        if (corsProperties.getAllowedMethods() != null) {
+            configuration.setAllowedMethods(corsProperties.getAllowedMethods());
+        }
+        if (corsProperties.getAllowedHeaders() != null) {
+            configuration.setAllowedHeaders(corsProperties.getAllowedHeaders());
+        }
         configuration.setAllowCredentials(corsProperties.isAllowCredentials());
         configuration.setMaxAge(corsProperties.getMaxAge());
         

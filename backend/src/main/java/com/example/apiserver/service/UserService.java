@@ -4,7 +4,6 @@ import com.example.apiserver.dto.user.UserRequest;
 import com.example.apiserver.dto.user.UserResponse;
 import com.example.apiserver.entity.Gender;
 import com.example.apiserver.entity.Provider;
-import com.example.apiserver.entity.RefreshToken;
 import com.example.apiserver.entity.User;
 import com.example.apiserver.entity.UserRole;
 import com.example.apiserver.exception.BadRequestException;
@@ -93,6 +92,7 @@ public class UserService extends BaseService<User, Long> {
                 .gender(gender)
                 .role(UserRole.USER)
                 .provider(Provider.LOCAL)
+                .providerId(null) // 일반 회원가입은 providerId 없음
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -130,52 +130,114 @@ public class UserService extends BaseService<User, Long> {
         // 소셜 로그인 API에서 사용자 정보 가져오기
         SocialLoginService.SocialUserInfo socialUserInfo = socialLoginService.getUserInfo(provider, request.getAccessToken());
 
-        if (socialUserInfo.getEmail() == null || socialUserInfo.getEmail().isBlank()) {
-            throw new BadRequestException("소셜 로그인에서 이메일 정보를 가져올 수 없습니다");
+        // 기존 사용자 확인: providerId로 먼저 찾기 (가장 확실한 방법)
+        User user = null;
+        if (socialUserInfo.getProviderId() != null && !socialUserInfo.getProviderId().isBlank()) {
+            user = userRepository.findByProviderAndProviderIdAndIsDeletedFalse(provider, socialUserInfo.getProviderId())
+                    .orElse(null);
         }
-
-        // 기존 사용자 확인
-        User user = userRepository.findByEmailAndProviderAndIsDeletedFalse(socialUserInfo.getEmail(), provider)
-                .orElse(null);
+        
+        // providerId로 못 찾았고 이메일이 있는 경우, 이메일 + provider로 찾기 (하위 호환성)
+        if (user == null && socialUserInfo.getEmail() != null && !socialUserInfo.getEmail().isBlank()) {
+            user = userRepository.findByEmailAndProviderAndIsDeletedFalse(socialUserInfo.getEmail(), provider)
+                    .orElse(null);
+        }
 
         boolean isNewUser = false;
         if (user == null) {
             // 신규 사용자 생성 (소셜 로그인 시 필수 정보가 없을 수 있음)
             isNewUser = true;
+            
+            // 사용자 정보 파싱
+            LocalDate birthDate = SocialLoginDataParser.parseBirthDate(socialUserInfo.getBirthYear(), socialUserInfo.getBirthDay());
+            Gender gender = SocialLoginDataParser.parseGender(socialUserInfo.getGender());
+            
             user = User.builder()
-                    .email(socialUserInfo.getEmail())
-                    .name(socialUserInfo.getName() != null ? socialUserInfo.getName() : "사용자")
-                    .provider(provider)
+                    .email(socialUserInfo.getEmail()) // null 가능
+                    .password(null) // 소셜 로그인은 비밀번호 없음
+                    .name(socialUserInfo.getName()) // null 가능
+                    .phone(socialUserInfo.getPhone()) // null 가능
+                    .birthDate(birthDate) // null 가능
+                    .gender(gender) // null 가능
                     .role(UserRole.USER)
-                    .phone(socialUserInfo.getPhone())
-                    .profileImageUrl(socialUserInfo.getProfileImage())
-                    // birthDate, gender는 소셜에서 가져올 수 있으면 설정, 없으면 null
-                    .birthDate(SocialLoginDataParser.parseBirthDate(socialUserInfo.getBirthYear(), socialUserInfo.getBirthDay()))
-                    .gender(SocialLoginDataParser.parseGender(socialUserInfo.getGender()))
+                    .provider(provider)
+                    .providerId(socialUserInfo.getProviderId()) // Provider 고유 ID 저장
+                    .profileImageUrl(socialUserInfo.getProfileImage()) // null 가능
                     .build();
             user = userRepository.save(user);
         } else {
-            // 기존 사용자 정보 업데이트 (프로필 이미지 등)
+            // 기존 사용자 정보 업데이트 - OAuth에서 받은 최신 정보로 업데이트
+            // providerId가 없었던 기존 사용자에게 providerId 추가 (하위 호환성)
+            if (user.getProviderId() == null && socialUserInfo.getProviderId() != null) {
+                user.updateProviderId(socialUserInfo.getProviderId());
+            }
+            
+            // OAuth에서 받은 정보로 업데이트 (null이 아니고 기존 값이 없을 때만)
+            if (socialUserInfo.getName() != null && !socialUserInfo.getName().isBlank() 
+                    && (user.getName() == null || user.getName().isBlank())) {
+                user.updateName(socialUserInfo.getName());
+            }
+            if (socialUserInfo.getEmail() != null && !socialUserInfo.getEmail().isBlank() 
+                    && (user.getEmail() == null || user.getEmail().isBlank())) {
+                user.updateEmail(socialUserInfo.getEmail());
+            }
+            if (socialUserInfo.getPhone() != null && !socialUserInfo.getPhone().isBlank() 
+                    && (user.getPhone() == null || user.getPhone().isBlank())) {
+                String normalizedPhone = normalizePhone(socialUserInfo.getPhone());
+                // 중복 체크
+                if (normalizedPhone != null && userRepository.existsByPhoneAndIsDeletedFalse(normalizedPhone)) {
+                    User existingUser = userRepository.findByPhoneAndIsDeletedFalse(normalizedPhone);
+                    if (existingUser == null || !existingUser.getId().equals(user.getId())) {
+                        // 중복이지만 현재 사용자가 아니면 업데이트하지 않음
+                    } else {
+                        user.updatePhone(normalizedPhone);
+                    }
+                } else {
+                    user.updatePhone(normalizedPhone);
+                }
+            }
+            
+            // 생년월일 업데이트
+            LocalDate birthDate = SocialLoginDataParser.parseBirthDate(socialUserInfo.getBirthYear(), socialUserInfo.getBirthDay());
+            if (birthDate != null && user.getBirthDate() == null) {
+                user.updateBirthDate(birthDate);
+            }
+            
+            // 성별 업데이트
+            Gender gender = SocialLoginDataParser.parseGender(socialUserInfo.getGender());
+            if (gender != null && user.getGender() == null) {
+                user.updateGender(gender);
+            }
+            
+            // 프로필 이미지 업데이트 (항상 최신 정보로)
             if (socialUserInfo.getProfileImage() != null && !socialUserInfo.getProfileImage().isBlank()) {
                 user.updateProfileImageUrl(socialUserInfo.getProfileImage());
             }
+            
+            // 변경사항 저장
+            userRepository.save(user);
         }
-
-        return new SocialLoginResult(UserResponse.from(user), isNewUser);
+        return new SocialLoginResult(UserResponse.from(user), user, isNewUser);
     }
 
 
     public static class SocialLoginResult {
         private final UserResponse userResponse;
+        private final User user;
         private final boolean isNewUser;
 
-        public SocialLoginResult(UserResponse userResponse, boolean isNewUser) {
+        public SocialLoginResult(UserResponse userResponse, User user, boolean isNewUser) {
             this.userResponse = userResponse;
+            this.user = user;
             this.isNewUser = isNewUser;
         }
 
         public UserResponse getUserResponse() {
             return userResponse;
+        }
+
+        public User getUser() {
+            return user;
         }
 
         public boolean isNewUser() {
@@ -190,7 +252,16 @@ public class UserService extends BaseService<User, Long> {
 
     public UserResponse getProfile(Long userId) {
         User user = findById(userId);
+        // 보안상 일반 사용자용으로 id 제외
         return UserResponse.from(user);
+    }
+
+    /**
+     * 관리자용 프로필 조회 - id 포함
+     */
+    public UserResponse getProfileForAdmin(Long userId) {
+        User user = findById(userId);
+        return UserResponse.fromWithId(user);
     }
 
     @Transactional
@@ -261,7 +332,25 @@ public class UserService extends BaseService<User, Long> {
             throw new BadRequestException("이미 모든 필수 정보가 입력되어 있습니다");
         }
 
-        // 휴대폰 번호 설정
+        // 이메일 설정 (OAuth에서 받은 정보, 선택)
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            // 다른 사용자가 사용 중인지 확인
+            if (userRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
+                User existingUser = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
+                        .orElse(null);
+                if (existingUser != null && !existingUser.getId().equals(userId)) {
+                    throw new BadRequestException("이미 사용 중인 이메일입니다");
+                }
+            }
+            user.updateEmail(request.getEmail());
+        }
+
+        // 이름 설정 (OAuth에서 받은 정보, 선택)
+        if (request.getName() != null && !request.getName().isBlank()) {
+            user.updateName(request.getName());
+        }
+
+        // 휴대폰 번호 설정 (필수)
         if (request.getPhone() != null && !request.getPhone().isBlank()) {
             String normalizedPhone = normalizePhone(request.getPhone());
             // 다른 사용자가 사용 중인지 확인
@@ -274,7 +363,7 @@ public class UserService extends BaseService<User, Long> {
             user.updatePhone(normalizedPhone);
         }
 
-        // 생년월일 설정
+        // 생년월일 설정 (필수)
         if (request.getBirthDate() != null && !request.getBirthDate().isBlank()) {
             try {
                 LocalDate birthDate = LocalDate.parse(request.getBirthDate(), DATE_FORMATTER);
@@ -284,7 +373,7 @@ public class UserService extends BaseService<User, Long> {
             }
         }
 
-        // 성별 설정
+        // 성별 설정 (필수)
         if (request.getGender() != null && !request.getGender().isBlank()) {
             try {
                 Gender gender = Gender.valueOf(request.getGender().toUpperCase());
@@ -414,7 +503,7 @@ public class UserService extends BaseService<User, Long> {
                 users = userRepository.findAllWithSearch(search, pageable);
         }
         
-        return users.map(UserResponse::from);
+        return users.map(UserResponse::fromWithId);  // 관리자용: id 포함
     }
 
     @Transactional
@@ -445,10 +534,11 @@ public class UserService extends BaseService<User, Long> {
                 .gender(gender)
                 .role(UserRole.USER)
                 .provider(Provider.LOCAL)
+                .providerId(null) // 일반 회원가입은 providerId 없음
                 .build();
 
         User savedUser = userRepository.save(user);
-        return UserResponse.from(savedUser);
+        return UserResponse.fromWithId(savedUser);  // 관리자용: id 포함
     }
 
     @Transactional
@@ -501,7 +591,7 @@ public class UserService extends BaseService<User, Long> {
             user.updateEmail(request.getEmail());
         }
 
-        return UserResponse.from(user);
+        return UserResponse.fromWithId(user);  // 관리자용: id 포함
     }
 
     @Transactional

@@ -21,6 +21,8 @@ public interface UserRepository extends BaseRepository<User, Long> {
     
     Optional<User> findByEmailAndProviderAndIsDeletedFalse(String email, com.example.apiserver.entity.Provider provider);
     
+    Optional<User> findByProviderAndProviderIdAndIsDeletedFalse(com.example.apiserver.entity.Provider provider, String providerId);
+    
     @Query("SELECT u FROM User u WHERE u.isDeleted = false " +
            "AND (:search IS NULL OR :search = '' OR u.email LIKE %:search% OR u.name LIKE %:search%) " +
            "ORDER BY u.createdAt DESC")

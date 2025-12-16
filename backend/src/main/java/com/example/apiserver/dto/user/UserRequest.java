@@ -63,6 +63,26 @@ public class UserRequest {
 
         @NotBlank(message = "Access Token은 필수입니다")
         private String accessToken;
+
+        public void setProvider(String provider) {
+            this.provider = provider;
+        }
+
+        public void setAccessToken(String accessToken) {
+            this.accessToken = accessToken;
+        }
+    }
+
+    @Getter
+    @NoArgsConstructor
+    public static class OAuthCallback {
+        @NotBlank(message = "소셜 로그인 제공자는 필수입니다")
+        private String provider;
+
+        @NotBlank(message = "인증 코드는 필수입니다")
+        private String code;
+
+        private String state; // 네이버 OAuth의 경우 state 파라미터 (선택)
     }
 
     @Getter
@@ -103,6 +123,14 @@ public class UserRequest {
     @Getter
     @NoArgsConstructor
     public static class CompleteSocialProfile {
+        @Email(message = "올바른 이메일 형식이 아닙니다")
+        @Schema(description = "이메일 주소 (OAuth에서 받은 정보)", example = "user@example.com")
+        private String email;
+
+        @Size(max = 50, message = "이름은 50자 이하여야 합니다")
+        @Schema(description = "이름 (OAuth에서 받은 정보)", example = "홍길동", maxLength = 50)
+        private String name;
+
         @NotBlank(message = "휴대폰 번호는 필수입니다")
         @Pattern(regexp = "^010-?\\d{4}-?\\d{4}$", message = "휴대폰 번호 형식이 올바르지 않습니다")
         @Schema(description = "휴대폰 번호", example = "010-1234-5678", pattern = "^010-?\\d{4}-?\\d{4}$")

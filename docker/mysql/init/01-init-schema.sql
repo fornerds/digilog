@@ -21,17 +21,19 @@ CREATE TABLE IF NOT EXISTS users (
     deleted_at DATETIME(6) DEFAULT NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at DATETIME(6) DEFAULT NULL,
-    email VARCHAR(100) NOT NULL,
-    name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) DEFAULT NULL,
+    name VARCHAR(50) DEFAULT NULL,
     password VARCHAR(255) DEFAULT NULL,
     profile_image_url VARCHAR(500) DEFAULT NULL,
     role ENUM('ADMIN', 'USER') NOT NULL,
-    birth_date DATE NOT NULL,
-    gender ENUM('FEMALE', 'MALE', 'OTHER') NOT NULL,
-    phone VARCHAR(20) NOT NULL,
+    birth_date DATE DEFAULT NULL,
+    gender ENUM('FEMALE', 'MALE', 'OTHER') DEFAULT NULL,
+    phone VARCHAR(20) DEFAULT NULL,
     provider ENUM('KAKAO', 'LOCAL', 'NAVER') NOT NULL,
+    provider_id VARCHAR(100) DEFAULT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY UK_email (email)
+    UNIQUE KEY UK_email (email),
+    UNIQUE KEY UK_provider_provider_id (provider, provider_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 2-1. refresh_tokens 테이블
