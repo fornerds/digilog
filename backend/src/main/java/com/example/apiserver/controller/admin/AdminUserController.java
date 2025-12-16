@@ -1,11 +1,19 @@
 package com.example.apiserver.controller.admin;
 
 import com.example.apiserver.dto.ApiResponse;
+import com.example.apiserver.dto.MessageResponse;
+import com.example.apiserver.dto.PaginatedResponse;
+import com.example.apiserver.dto.PaginationInfo;
 import com.example.apiserver.dto.user.UserRequest;
 import com.example.apiserver.dto.user.UserResponse;
 import com.example.apiserver.service.UserService;
 import com.example.apiserver.util.AdminUtil;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+// Swagger ApiResponse는 전체 경로로 사용
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,8 +39,20 @@ public class AdminUserController {
     private final UserService userService;
 
     @Operation(summary = "사용자 목록 조회", description = "전체 사용자 목록 조회")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = @Content()
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한이 없습니다",
+            content = @Content(
+                examples = @ExampleObject(value = "{\"success\": false, \"message\": \"관리자 권한이 필요합니다\", \"data\": null, \"timestamp\": \"2025-12-16T10:00:00\"}"))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content())
+    })
     @GetMapping
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getUsers(
+    public ResponseEntity<ApiResponse<PaginatedResponse<UserResponse>>> getUsers(
             Authentication authentication,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int limit,
@@ -43,20 +63,36 @@ public class AdminUserController {
         
         Page<UserResponse> users = userService.getUsersForAdmin(page, limit, search, sortBy, order);
         
-        Map<String, Object> data = new HashMap<>();
-        data.put("users", users.getContent());
+        PaginationInfo pagination = PaginationInfo.builder()
+                .page(users.getNumber() + 1)
+                .limit(users.getSize())
+                .total(users.getTotalElements())
+                .totalPages(users.getTotalPages())
+                .build();
         
-        Map<String, Object> pagination = new HashMap<>();
-        pagination.put("page", users.getNumber() + 1);
-        pagination.put("limit", users.getSize());
-        pagination.put("total", users.getTotalElements());
-        pagination.put("totalPages", users.getTotalPages());
-        data.put("pagination", pagination);
+        PaginatedResponse<UserResponse> response = PaginatedResponse.<UserResponse>builder()
+                .items(users.getContent())
+                .pagination(pagination)
+                .build();
         
-        return ResponseEntity.ok(ApiResponse.success(data));
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Operation(summary = "사용자 상세 조회", description = "특정 사용자 상세 정보 조회")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "조회 성공",
+            content = @Content()
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한이 없습니다",
+            content = @Content()),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다",
+            content = @Content(
+                examples = @ExampleObject(value = "{\"success\": false, \"message\": \"Resource not found\", \"data\": null, \"timestamp\": \"2025-12-16T10:00:00\"}"))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content())
+    })
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> getUser(
             Authentication authentication,
@@ -68,6 +104,19 @@ public class AdminUserController {
     }
 
     @Operation(summary = "사용자 생성", description = "관리자가 사용자 생성")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "201",
+            description = "사용자 생성 성공",
+            content = @Content()
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 데이터 검증 실패 또는 중복된 이메일/휴대폰 번호",
+            content = @Content()),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한이 없습니다",
+            content = @Content()),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content())
+    })
     @PostMapping
     public ResponseEntity<ApiResponse<UserResponse>> createUser(
             Authentication authentication,
@@ -79,6 +128,21 @@ public class AdminUserController {
     }
 
     @Operation(summary = "사용자 수정", description = "관리자가 사용자 정보 수정")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "수정 성공",
+            content = @Content()
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 데이터 검증 실패 또는 중복된 이메일/휴대폰 번호",
+            content = @Content()),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한이 없습니다",
+            content = @Content()),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다",
+            content = @Content()),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content())
+    })
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             Authentication authentication,
@@ -91,16 +155,30 @@ public class AdminUserController {
     }
 
     @Operation(summary = "사용자 삭제", description = "관리자가 사용자 삭제")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "삭제 성공",
+            content = @Content()
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한이 없습니다",
+            content = @Content()),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없습니다",
+            content = @Content()),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content())
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Map<String, String>>> deleteUser(
+    public ResponseEntity<ApiResponse<MessageResponse>> deleteUser(
             Authentication authentication,
             @PathVariable Long id) {
         AdminUtil.checkAdminRole(authentication);
         
         userService.deleteUserForAdmin(id);
         
-        Map<String, String> data = new HashMap<>();
-        data.put("message", "사용자가 삭제되었습니다.");
-        return ResponseEntity.ok(ApiResponse.success("사용자가 삭제되었습니다.", data));
+        MessageResponse messageResponse = MessageResponse.builder()
+                .message("사용자가 삭제되었습니다.")
+                .build();
+        return ResponseEntity.ok(ApiResponse.success("사용자가 삭제되었습니다.", messageResponse));
     }
 }

@@ -20,8 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -59,12 +57,9 @@ public class AuthService {
         // Cookie에 refreshToken만 저장 (accessToken은 응답 body에 포함)
         cookieUtil.setRefreshTokenCookie(response, refreshToken, (int) (jwtUtil.getRefreshExpiration() / 1000));
 
-        Map<String, Object> userData = new HashMap<>();
-        // 보안상 id 제외
-        userData.put("email", user.getEmail());
-        userData.put("name", user.getName());
+        UserResponse userResponse = UserResponse.from(user);
 
-        return new LoginResult(accessToken, userData);
+        return new LoginResult(accessToken, userResponse);
     }
 
     /**
@@ -128,13 +123,7 @@ public class AuthService {
         // Cookie에 refreshToken만 저장 (accessToken은 응답 body에 포함)
         cookieUtil.setRefreshTokenCookie(response, refreshToken, (int) (jwtUtil.getRefreshExpiration() / 1000));
 
-        Map<String, Object> userData = new HashMap<>();
-        // 보안상 id 제외
-        userData.put("email", userResponse.getEmail());
-        userData.put("name", userResponse.getName());
-        userData.put("provider", userResponse.getProvider());
-
-        return new SocialLoginResult(accessToken, userData, result.isNewUser());
+        return new SocialLoginResult(accessToken, userResponse, result.isNewUser());
     }
 
     @Transactional
@@ -245,14 +234,14 @@ public class AuthService {
     @RequiredArgsConstructor
     public static class LoginResult {
         private final String accessToken;
-        private final Map<String, Object> user;
+        private final UserResponse user;
     }
 
     @Getter
     @RequiredArgsConstructor
     public static class SocialLoginResult {
         private final String accessToken;
-        private final Map<String, Object> user;
+        private final UserResponse user;
         private final boolean isNewUser;
     }
 }
