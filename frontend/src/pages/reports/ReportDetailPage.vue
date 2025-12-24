@@ -134,8 +134,8 @@
       <div class="report-detail-page__products-section">
         <div class="report-detail-page__products-header">
           <div class="report-detail-page__products-title">
-            <p>DS타입에겐</p>
-            <p>이 제품을 추천해요!</p>
+            <p>DS타입에게는</p>
+            <p>이런 제품을 추천해요!</p>
           </div>
           <button 
             class="report-detail-page__products-more"
