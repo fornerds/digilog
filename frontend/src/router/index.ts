@@ -121,6 +121,14 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory('/digilog/'),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    // 저장된 위치가 있으면 (뒤로가기/앞으로가기) 그 위치로 이동
+    if (savedPosition) {
+      return savedPosition
+    }
+    // 그 외의 경우 항상 맨 위로 스크롤
+    return { top: 0, behavior: 'smooth' }
+  },
 })
 
 export default router

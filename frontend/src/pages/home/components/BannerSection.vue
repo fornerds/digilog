@@ -16,6 +16,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { getBanners } from '@/api/banner.api'
 import bannerImage from '@/assets/images/banner.png'
 
@@ -26,10 +27,15 @@ interface Banner {
   imageUrl: string
 }
 
+const router = useRouter()
 const banner = ref<Banner | null>(null)
 
 const handleBannerClick = (banner: Banner) => {
-  // 배너 클릭 시 처리 로직 (필요시 추가)
+  // 배너 클릭 시 퍼스널컬러 페이지로 이동
+  // TODO: 실제 reportId를 가져오는 로직으로 교체 필요
+  // 현재는 예시로 1을 사용
+  const reportId = 1
+  router.push(`/reports/${reportId}/personal-color`)
 }
 
 onMounted(async () => {

@@ -1,10 +1,14 @@
 /**
- * SUIT 폰트 설정
+ * 폰트 설정
  * 프로젝트 전역에서 사용하는 폰트
+ * - SUIT: 한글 웹폰트 (본문, UI 요소)
+ * - Playfair Display: 영문 세리프 폰트 (제목, 강조)
  */
 
 /* SUIT 폰트 CDN 또는 로컬 파일을 통한 로드 */
 @import url('https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css');
+
+/* Playfair Display 폰트는 index.html에서 Google Fonts로 로드됨 */
 
 /* 또는 로컬 폰트 파일 사용 (CDN 대신 사용하려면 주석 해제) */
 /*
