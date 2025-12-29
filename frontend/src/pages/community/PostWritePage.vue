@@ -75,13 +75,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import Icon from '@/components/common/Icon/Icon.vue'
 import ImagePreview from './components/ImagePreview.vue'
 import ProfanityWarningModal from './components/ProfanityWarningModal.vue'
 
 const router = useRouter()
+const route = useRoute()
+
+const postId = computed(() => {
+  return route.params.postId ? Number(route.params.postId) : null
+})
+
+const isEditMode = computed(() => {
+  return postId.value !== null
+})
 
 const content = ref('')
 const hashtags = ref('')
@@ -115,14 +124,24 @@ const handleUpload = () => {
 }
 
 const submitPost = () => {
-  // TODO: 실제 게시글 업로드 로직 구현
-  console.log('Upload post:', {
-    content: content.value,
-    hashtags: hashtags.value,
-    images: uploadedImages.value,
-  })
+  if (isEditMode.value) {
+    // TODO: 실제 게시글 수정 로직 구현
+    console.log('Update post:', {
+      postId: postId.value,
+      content: content.value,
+      hashtags: hashtags.value,
+      images: uploadedImages.value,
+    })
+  } else {
+    // TODO: 실제 게시글 업로드 로직 구현
+    console.log('Upload post:', {
+      content: content.value,
+      hashtags: hashtags.value,
+      images: uploadedImages.value,
+    })
+  }
   
-  // 업로드 후 커뮤니티 페이지로 이동
+  // 업로드/수정 후 커뮤니티 페이지로 이동
   router.push('/community')
 }
 
@@ -181,6 +200,16 @@ const handleHeaderUpload = () => {
 onMounted(() => {
   // 커스텀 이벤트 리스너 등록
   window.addEventListener('header-upload-click', handleHeaderUpload)
+  
+  // 수정 모드인 경우 기존 게시글 데이터 불러오기
+  if (isEditMode.value && postId.value) {
+    // TODO: 실제 API를 통해 게시글 데이터 불러오기
+    // 예시 데이터 (실제로는 API에서 가져와야 함)
+    // const post = await fetchPost(postId.value)
+    // content.value = post.content
+    // hashtags.value = post.hashtags?.join(' ') || ''
+    // uploadedImages.value = post.images || []
+  }
 })
 
 onUnmounted(() => {

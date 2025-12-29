@@ -1,93 +1,60 @@
 <template>
   <section class="banner-section">
-    <div 
-      class="banner-section__slider"
-      :style="{ 
-        transform: `translateX(-${currentIndex * 100}%)`,
-        width: `${banners.length * 100}%`
-      }"
+    <div
+      v-if="banner"
+      class="banner-section__banner"
+      @click="handleBannerClick(banner)"
     >
-      <div
-        v-for="(banner, index) in banners"
-        :key="index"
-        class="banner-section__slide"
-        :style="{ width: '100%' }"
-        @click="handleBannerClick(banner)"
-      >
-        <img 
-          :src="banner.image" 
-          :alt="banner.title"
-          class="banner-section__image"
-        />
-      </div>
-    </div>
-
-    <!-- 인디케이터 -->
-    <div v-if="banners.length > 1" class="banner-section__indicators">
-      <button
-        v-for="(banner, index) in banners"
-        :key="index"
-        @click="currentIndex = index"
-        :class="[
-          'banner-section__indicator',
-          { 'banner-section__indicator--active': currentIndex === index }
-        ]"
-        :aria-label="`배너 ${index + 1}`"
+      <img 
+        :src="banner.imageUrl" 
+        :alt="banner.title"
+        class="banner-section__image"
       />
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
+import { getBanners } from '@/api/banner.api'
 import bannerImage from '@/assets/images/banner.png'
 
 interface Banner {
   id: number
-  image: string
   title: string
-  link?: string
+  description: string
+  imageUrl: string
 }
 
-const banners = ref<Banner[]>([
-  {
-    id: 1,
-    image: bannerImage,
-    title: '배너 1',
-  },
-  {
-    id: 2,
-    image: bannerImage,
-    title: '배너 2',
-  },
-])
-
-const currentIndex = ref(0)
-const autoPlayInterval = ref<number | null>(null)
+const banner = ref<Banner | null>(null)
 
 const handleBannerClick = (banner: Banner) => {
-  if (banner.link) {
-    window.location.href = banner.link
-  }
+  // 배너 클릭 시 처리 로직 (필요시 추가)
 }
 
-const startAutoPlay = () => {
-  if (banners.value.length > 1) {
-    autoPlayInterval.value = window.setInterval(() => {
-      currentIndex.value = (currentIndex.value + 1) % banners.value.length
-    }, 5000)
-  }
-}
-
-onMounted(() => {
-  if (banners.value.length > 1) {
-    startAutoPlay()
-  }
-})
-
-onUnmounted(() => {
-  if (autoPlayInterval.value) {
-    clearInterval(autoPlayInterval.value)
+onMounted(async () => {
+  try {
+    const response = await getBanners()
+    if (response.data?.items && response.data.items.length > 0) {
+      banner.value = response.data.items[0]
+    } else {
+      // API에서 데이터가 없을 경우 기본 이미지 사용
+      banner.value = {
+        id: 0,
+        title: '배너',
+        description: '',
+        imageUrl: bannerImage,
+      }
+    }
+  } catch (error) {
+    console.error('배너 조회 실패:', error)
+    // 에러 발생 시 기본 이미지 사용
+    banner.value = {
+      id: 0,
+      title: '배너',
+      description: '',
+      imageUrl: bannerImage,
+    }
   }
 })
 </script>
@@ -99,52 +66,23 @@ onUnmounted(() => {
   height: 88px;
   overflow: hidden;
   border-radius: 8px;
-  cursor: pointer;
 }
 
-.banner-section__slider {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  transition: transform 700ms ease-in-out;
-}
-
-.banner-section__slide {
+.banner-section__banner {
   position: relative;
-  flex-shrink: 0;
-  height: 100%;
   width: 100%;
+  height: 100%;
   border-radius: 6px;
   border: 1px solid var(--GraySacle-Line, #E5E7EB);
   background-color: #F3F4F6;
+  cursor: pointer;
 }
 
 .banner-section__image {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: left center;
-}
-
-.banner-section__indicators {
-  display: none;
-}
-
-.banner-section__indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: none;
-  background-color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  transition: all 0.3s;
-  padding: 0;
-}
-
-.banner-section__indicator--active {
-  background-color: white;
-  width: 24px;
-  border-radius: 4px;
 }
 </style>
 

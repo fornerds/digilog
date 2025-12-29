@@ -81,6 +81,12 @@ const routes: RouteRecordRaw[] = [
         // beforeEnter: authGuard,
       },
       {
+        path: 'community/:postId/edit',
+        name: 'PostEdit',
+        component: () => import('@/pages/community/PostWritePage.vue'),
+        // beforeEnter: authGuard,
+      },
+      {
         path: 'mypage',
         name: 'MyPage',
         component: () => import('@/pages/mypage/MyPage.vue'),

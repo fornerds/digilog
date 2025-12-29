@@ -38,18 +38,20 @@ const isPersonalColorPage = computed(() => route.name === 'PersonalColor')
 const isRecommendationsPage = computed(() => route.name === 'Recommendations')
 const isCommunityPage = computed(() => route.name === 'Community')
 const isPostWritePage = computed(() => route.name === 'PostWrite')
+const isPostEditPage = computed(() => route.name === 'PostEdit')
 const isMyPage = computed(() => route.name === 'MyPage')
 const isProfileEditPage = computed(() => route.name === 'ProfileEdit')
 const isLikedProductsPage = computed(() => route.name === 'LikedProducts')
-const showBackButton = computed(() => isReportDetailPage.value || isReportsPage.value || isPersonalColorPage.value || isRecommendationsPage.value || isCommunityPage.value || isPostWritePage.value || isProfileEditPage.value || isLikedProductsPage.value)
+const showBackButton = computed(() => isReportDetailPage.value || isReportsPage.value || isPersonalColorPage.value || isRecommendationsPage.value || isCommunityPage.value || isPostWritePage.value || isPostEditPage.value || isProfileEditPage.value || isLikedProductsPage.value)
 const showLikeButton = computed(() => isRecommendationsPage.value)
 const showWriteButton = computed(() => isCommunityPage.value)
-const showUploadButton = computed(() => isPostWritePage.value)
+const showUploadButton = computed(() => isPostWritePage.value || isPostEditPage.value)
 const showLogoutButton = computed(() => isMyPage.value)
 const showSaveButton = computed(() => isProfileEditPage.value)
 const headerTitle = computed(() => {
   if (isCommunityPage.value) return '커뮤니티'
   if (isPostWritePage.value) return '새 게시글'
+  if (isPostEditPage.value) return '게시글 수정'
   if (isMyPage.value) return '마이페이지'
   if (isProfileEditPage.value) return '개인정보 수정'
   if (isLikedProductsPage.value) return '찜한 제품'

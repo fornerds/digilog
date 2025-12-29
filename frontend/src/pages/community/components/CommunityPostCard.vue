@@ -16,13 +16,23 @@
           </div>
         </div>
       </div>
-      <button
-        class="community-post-card__menu-button"
-        @click.stop="handleMenuClick"
-        aria-label="메뉴"
-      >
-        <Icon name="dots" :size="20" color="#4b5563" />
-      </button>
+      <div class="community-post-card__menu-wrapper" ref="menuWrapperRef">
+        <button
+          ref="menuButtonRef"
+          class="community-post-card__menu-button"
+          @click.stop="handleMenuClick"
+          aria-label="메뉴"
+        >
+          <Icon name="dots" :size="20" color="#4b5563" />
+        </button>
+        <PostMenuDropdown
+          :is-open="isMenuOpen"
+          :trigger-element="menuButtonRef"
+          @close="handleMenuClose"
+          @edit="handleEdit"
+          @delete="handleDelete"
+        />
+      </div>
     </div>
     
     <div class="community-post-card__content">
@@ -72,8 +82,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import Icon from '@/components/common/Icon/Icon.vue'
+import PostMenuDropdown from './PostMenuDropdown.vue'
+
+const menuButtonRef = ref<HTMLElement | null>(null)
+const menuWrapperRef = ref<HTMLElement | null>(null)
 
 interface Post {
   id: number
@@ -100,7 +114,11 @@ const emit = defineEmits<{
   'like-click': []
   'comment-click': []
   'share-click': []
+  'edit': []
+  'delete': []
 }>()
+
+const isMenuOpen = ref(false)
 
 const formatTime = (dateString: string) => {
   const date = new Date(dateString)
@@ -126,7 +144,22 @@ const formatHashtags = (hashtags: string[]) => {
 }
 
 const handleMenuClick = () => {
+  isMenuOpen.value = !isMenuOpen.value
   emit('menu-click')
+}
+
+const handleMenuClose = () => {
+  isMenuOpen.value = false
+}
+
+const handleEdit = () => {
+  isMenuOpen.value = false
+  emit('edit')
+}
+
+const handleDelete = () => {
+  isMenuOpen.value = false
+  emit('delete')
 }
 
 const handleLikeClick = () => {
@@ -223,6 +256,11 @@ const handleShareClick = () => {
   white-space: nowrap;
 }
 
+.community-post-card__menu-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .community-post-card__menu-button {
   display: flex;
   align-items: center;
@@ -233,7 +271,6 @@ const handleShareClick = () => {
   border: none;
   cursor: pointer;
   padding: 0;
-  flex-shrink: 0;
 }
 
 .community-post-card__content {

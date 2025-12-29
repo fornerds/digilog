@@ -5,15 +5,13 @@
       <div 
         class="hero-banner__slider"
         :style="{ 
-          transform: `translateX(-${currentIndex * 100}%)`,
-          width: `${banners.length * 100}%`
+          transform: `translateX(calc(-${currentIndex} * 50%))`
         }"
       >
         <div
           v-for="(banner, index) in banners"
           :key="index"
           class="hero-banner__slide"
-          :style="{ width: '100%' }"
         >
           <div class="hero-banner__image">
             <img 
@@ -67,10 +65,11 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import Icon from '@/components/common/Icon/Icon.vue'
 import mainImage from '@/assets/images/main.png'
+import main02Image from '@/assets/images/main02.png'
 
 const banners = ref([
   { id: 1, image: mainImage },
-  { id: 2, image: mainImage },
+  { id: 2, image: main02Image },
 ])
 
 const currentIndex = ref(0)
@@ -136,12 +135,15 @@ onUnmounted(() => {
   display: flex;
   height: 538px;
   transition: transform 700ms ease-in-out;
+  will-change: transform;
+  width: 200%;
 }
 
 .hero-banner__slide {
   position: relative;
   flex-shrink: 0;
   height: 100%;
+  width: 50%;
 }
 
 .hero-banner__image {
@@ -149,10 +151,11 @@ onUnmounted(() => {
   inset: 0;
   border-radius: 0 0 99px 99px;
   overflow: hidden;
+  width: 100%;
 }
 
 .hero-banner__img {
-  width: 50%;
+  width: 100%;
   height: 100%;
   object-fit: cover;
 }

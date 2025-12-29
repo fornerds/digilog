@@ -64,6 +64,8 @@
             @like-click="handlePostLikeClick(post.id)"
             @comment-click="handlePostCommentClick(post.id)"
             @share-click="handlePostShareClick(post.id)"
+            @edit="handlePostEdit(post.id)"
+            @delete="handlePostDelete(post.id)"
           />
           <div v-if="post.id !== posts[posts.length - 1].id" class="community-page__divider"></div>
         </div>
@@ -290,6 +292,22 @@ const handleCommentSent = (text: string) => {
 const handlePostShareClick = (postId: number) => {
   // TODO: 공유 기능 구현
   console.log('Post share clicked:', postId)
+}
+
+const handlePostEdit = (postId: number) => {
+  router.push(`/community/${postId}/edit`)
+}
+
+const handlePostDelete = (postId: number) => {
+  if (confirm('정말 이 게시글을 삭제하시겠습니까?')) {
+    // TODO: 실제 게시글 삭제 API 호출
+    console.log('Delete post:', postId)
+    // 삭제 후 목록에서 제거
+    const index = posts.value.findIndex(p => p.id === postId)
+    if (index > -1) {
+      posts.value.splice(index, 1)
+    }
+  }
 }
 
 onMounted(() => {
